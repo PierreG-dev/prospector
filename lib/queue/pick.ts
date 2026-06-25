@@ -29,8 +29,8 @@ export type TriCandidate = {
 const BATCH = 50; // taille du panel sur lequel on tire à la roulette
 
 /**
- * Combine score brut et fenêtre d'appel optimale → poids final.
- * - score peut être négatif → on cape à 1 pour ne pas exclure.
+ * Combine score (P de conversion 0-100) et fenêtre d'appel optimale → poids final.
+ * - score = 0 (ex. pas de tel) → poids 0 : exclu du tirage.
  * - weightAt rend 0 pour les zones à éviter → on cape à 0.05 pour éviter la famine totale.
  */
 function combinedWeight(
@@ -38,7 +38,7 @@ function combinedWeight(
   trade: TradeBucket | null,
   now: Date
 ): number {
-  const base = Math.max(score, 1);
+  const base = Math.max(score, 0);
   const w = Math.max(weightAt(trade, now), 0.05);
   return base * w;
 }

@@ -1,7 +1,7 @@
 /** @type {import('next').NextConfig} */
 const nextConfig = {
   reactStrictMode: true,
-  serverExternalPackages: ["mongoose"],
+  serverExternalPackages: ["mongoose", "node-cron"],
 };
 
 export default nextConfig;

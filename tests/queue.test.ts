@@ -41,15 +41,13 @@ describe("rouletteIndex", () => {
 });
 
 describe("combinedWeight", () => {
-  it("clamp les scores négatifs à 1", () => {
-    // À une heure donnée, deux scores -5 et 1 doivent donner le même poids
+  it("exclut les scores nuls ou négatifs (poids = 0)", () => {
     const now = new Date();
-    const w1 = combinedWeight(-5, "plombier", now);
-    const w2 = combinedWeight(1, "plombier", now);
-    expect(w1).toBe(w2);
+    expect(combinedWeight(0, "plombier", now)).toBe(0);
+    expect(combinedWeight(-5, "plombier", now)).toBe(0);
   });
 
-  it("trade null → poids 0.5 (multiplié par max(score,1))", () => {
+  it("trade null → poids 0.5 (multiplié par le score)", () => {
     const w = combinedWeight(40, null, new Date());
     expect(w).toBe(40 * 0.5);
   });

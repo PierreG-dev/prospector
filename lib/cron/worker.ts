@@ -1,6 +1,13 @@
-import cron from "node-cron";
+import type cronType from "node-cron";
 import { tickReminders } from "@/lib/reminders/engine";
 import { pushDueReminders } from "@/lib/notify/processor";
+
+// `__non_webpack_require__` est un identifiant magique : webpack le remplace
+// par le `require` natif de Node sans analyser/bundler la cible.
+// Évite que webpack tente de bundler `node-cron` (qui embarque
+// `child_process.fork` et casse le build de l'instrumentation).
+declare const __non_webpack_require__: NodeRequire;
+const cron: typeof cronType = __non_webpack_require__("node-cron");
 
 /**
  * Worker interne `node-cron`. Singleton via `globalThis` (HMR-safe).

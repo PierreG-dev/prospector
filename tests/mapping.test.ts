@@ -87,11 +87,11 @@ describe("scoreV1", () => {
   });
 
   it("favorise l'absence de site", () => {
-    // +40 pas de site, +15 tel, +15 >=10 avis, +10 trade prio = 80
-    expect(scoreV1(base)).toBe(80);
+    // 60 pas de site, +8 (avis 10-49), +8 trade prio, note=0 → neutre = 76
+    expect(scoreV1(base)).toBe(76);
   });
 
-  it("pénalise un site propre + bien noté", () => {
+  it("plafonne un concurrent bien équipé", () => {
     const equipped = mapApifyItem({
       title: "Plomberie Star",
       phone: "05 61 12 34 56",
@@ -100,18 +100,28 @@ describe("scoreV1", () => {
       website: "https://www.plomberie-star.fr",
       categoryName: "Plombier",
     });
-    // +15 tel, +15 avis, +10 trade, -30 wellEquipped = 10
+    // site pro + 200 avis + 4.8 → wellEquipped → max 10
     expect(scoreV1(equipped)).toBe(10);
   });
 
-  it("compense plateforme partagée", () => {
+  it("traite plateforme partagée presque comme un sans-site", () => {
     const fb = mapApifyItem({
       title: "Salon FB",
       phone: "05 61 12 34 56",
       website: "https://facebook.com/salonfb",
       categoryName: "Salon de coiffure",
     });
-    // domain=null (FB), has_website=true → branche +20 plateforme partagée, +15 tel, +10 trade = 45
-    expect(scoreV1(fb)).toBe(45);
+    // 50 (plateforme partagée), -5 (0 avis), +8 trade prio, note=0 neutre = 53
+    expect(scoreV1(fb)).toBe(53);
+  });
+
+  it("exclut les prospects sans téléphone (P=0)", () => {
+    const noPhone = mapApifyItem({
+      title: "Boulange Sans Tel",
+      reviewsCount: 80,
+      totalScore: 4.4,
+      categoryName: "Boulangerie",
+    });
+    expect(scoreV1(noPhone)).toBe(0);
   });
 });
