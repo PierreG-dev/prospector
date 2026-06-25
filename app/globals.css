@@ -1,0 +1,51 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  html,
+  body {
+    height: 100%;
+  }
+  body {
+    @apply bg-cream text-warmDark font-sans antialiased;
+    font-feature-settings: "ss01", "cv11";
+  }
+  html.dark body {
+    @apply bg-warmDark text-cream;
+  }
+  :focus-visible {
+    @apply outline-none ring-2 ring-accent ring-offset-2 ring-offset-cream rounded-md;
+  }
+  html.dark :focus-visible {
+    @apply ring-offset-warmDark;
+  }
+  ::selection {
+    @apply bg-accent/20 text-warmDark;
+  }
+  html.dark ::selection {
+    @apply text-cream;
+  }
+  ::-webkit-scrollbar {
+    width: 10px;
+    height: 10px;
+  }
+  ::-webkit-scrollbar-thumb {
+    @apply bg-mid rounded-full;
+  }
+  html.dark ::-webkit-scrollbar-thumb {
+    @apply bg-nightBorder;
+  }
+  ::-webkit-scrollbar-thumb:hover {
+    @apply bg-textMuted/40;
+  }
+  ::-webkit-scrollbar-track {
+    background: transparent;
+  }
+}
+
+@layer components {
+  .signature-italic {
+    @apply font-serif italic text-accent;
+  }
+}
