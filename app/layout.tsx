@@ -29,6 +29,7 @@ const dmSerif = DM_Serif_Display({
 export const metadata: Metadata = {
   title: "Prospector — GODINO",
   description: "Outil interne de prospection commerciale",
+  robots: { index: false, follow: false },
 };
 
 const THEME_SCRIPT = `

@@ -4,7 +4,7 @@ import { Prospect } from "@/models/Prospect";
 import { parseApifyJson, type ApifyRoot } from "./parse";
 import { mapApifyItem } from "./map";
 import { findDuplicate } from "@/lib/dedup/cascade";
-import { scoreV1 } from "@/lib/scoring/score";
+import { scoreV2 } from "@/lib/scoring/score";
 import { refreshOgForProspect } from "@/lib/og/fetch";
 import type { SourceType } from "@/lib/types";
 
@@ -78,7 +78,7 @@ export async function runImport(
     // T3 (faible) ou nouveau : on crée.
     // Le badge T3 sera matérialisé par un champ `dup_possible` dans status_history ou un flag.
     // Pour V1 on stocke une note discrète dans status_history.
-    const score = scoreV1(canonical);
+    const score = scoreV2(canonical);
     const isT3 = match?.tier === "T3";
     if (isT3) dups.T3 += 1;
 

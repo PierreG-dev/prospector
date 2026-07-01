@@ -15,7 +15,7 @@ export function OgPreview({
 
   if (!og || (!og.title && !og.description && !og.image)) {
     return (
-      <div className="rounded-xl border border-dashed border-mid bg-cream/40 px-4 py-3 flex items-center gap-3 text-textMuted text-sm">
+      <div className="rounded-xl border border-dashed border-mid dark:border-nightBorder bg-cream/40 dark:bg-nightBorder/20 px-4 py-3 flex items-center gap-3 text-textMuted text-sm">
         <Globe2 className="h-4 w-4" strokeWidth={1.75} />
         <span>Aperçu du site indisponible</span>
       </div>
@@ -30,7 +30,7 @@ export function OgPreview({
       target="_blank"
       rel="noreferrer"
       className={cn(
-        "block rounded-xl border border-mid bg-white overflow-hidden",
+        "block rounded-xl border border-mid dark:border-nightBorder bg-white dark:bg-nightBorder/30 overflow-hidden",
         "hover:border-accent/60 hover:shadow-warm-sm transition-all"
       )}
     >

@@ -233,7 +233,7 @@ export function CrmFiche({ id }: { id: string }) {
           <Card>
             <CardBody>
               <h3 className="text-[11px] uppercase tracking-wider text-textMuted mb-3">
-                Pipeline
+                Avancement
               </h3>
               <PipelineSelector
                 value={data.pipeline_status}
@@ -241,13 +241,13 @@ export function CrmFiche({ id }: { id: string }) {
               />
               {data.pipeline_status === "contacte" && (
                 <p className="mt-3 text-xs text-textMuted">
-                  Moteur de relance actif. {data.relance_paused ? (
+                  Rappels automatiques actifs. {data.relance_paused ? (
                     <span className="text-textMuted">En pause.</span>
                   ) : (
                     <>
-                      {data.relance_count}/3 relances ·{" "}
+                      {data.relance_count}/3 rappels ·{" "}
                       {data.relance_next_at
-                        ? `prochaine échéance ${new Date(
+                        ? `prochain ${new Date(
                             data.relance_next_at
                           ).toLocaleDateString("fr-FR")}`
                         : "—"}
@@ -291,7 +291,7 @@ export function CrmFiche({ id }: { id: string }) {
           <Card>
             <CardBody>
               <h3 className="text-[11px] uppercase tracking-wider text-textMuted mb-3">
-                Méta
+                Infos
               </h3>
               <dl className="text-xs text-textMuted space-y-1.5">
                 <div className="flex justify-between">
@@ -299,7 +299,7 @@ export function CrmFiche({ id }: { id: string }) {
                   <dd className="font-mono text-warmDark">{data.score}</dd>
                 </div>
                 <div className="flex justify-between">
-                  <dt>Lifecycle</dt>
+                  <dt>Statut</dt>
                   <dd className="text-warmDark">{data.lifecycle}</dd>
                 </div>
                 {data.last_status_at && (
@@ -311,8 +311,8 @@ export function CrmFiche({ id }: { id: string }) {
                   </div>
                 )}
                 <div className="flex justify-between">
-                  <dt>Vu Nx</dt>
-                  <dd className="font-mono text-warmDark">{data.times_seen}</dd>
+                  <dt>Vu</dt>
+                  <dd className="font-mono text-warmDark">{data.times_seen}×</dd>
                 </div>
               </dl>
             </CardBody>

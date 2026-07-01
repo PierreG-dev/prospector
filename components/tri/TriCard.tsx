@@ -14,11 +14,12 @@ import {
   ArrowRight,
   ArrowLeft,
   ArrowUp,
+  Sparkles,
 } from "lucide-react";
 import { OgPreview } from "./OgPreview";
 import { Pill } from "@/components/ui/Pill";
 import type { TriCandidate } from "@/lib/queue/pick";
-import { isAvoidNow, isOptimalNow } from "@/lib/trade/calltime";
+import { isAvoidNow, isOptimalNow, getCallWindow } from "@/lib/trade/calltime";
 import { cn } from "@/lib/cn";
 
 export function TriCard({
@@ -44,6 +45,7 @@ export function TriCard({
 }) {
   const optimal = isOptimalNow(candidate.trade, now);
   const avoid = isAvoidNow(candidate.trade, now);
+  const callWindow = getCallWindow(candidate.trade);
 
   return (
     <div className="w-full max-w-2xl">
@@ -69,7 +71,14 @@ export function TriCard({
       </div>
 
       {/* Carte */}
-      <div className="rounded-2xl bg-white border border-mid shadow-warm overflow-hidden">
+      <div className="rounded-2xl bg-white dark:bg-nightSurface border border-mid dark:border-nightBorder shadow-warm overflow-hidden">
+        {/* Bandeau opportunité : sans site = prospect prioritaire */}
+        {!candidate.has_website && (
+          <div className="flex items-center gap-2 px-6 py-2.5 bg-accent2/10 border-b border-accent2/20 text-accent2 text-xs font-medium">
+            <Sparkles className="h-3.5 w-3.5" strokeWidth={2} />
+            Sans site web — prospect prioritaire
+          </div>
+        )}
         <div className="p-6">
           {/* Bandeau infos métier */}
           {candidate.trade && (
@@ -77,16 +86,19 @@ export function TriCard({
               <Pill tone="accent2" icon={<span aria-hidden>·</span>}>
                 {candidate.trade}
               </Pill>
-              {optimal && (
+              {callWindow && optimal && (
                 <span className="text-xs text-accent2 font-medium inline-flex items-center gap-1">
-                  <Clock className="h-3.5 w-3.5" strokeWidth={2} /> Bonne heure
-                  pour appeler
+                  <Clock className="h-3.5 w-3.5" strokeWidth={2} /> Idéal maintenant · {callWindow.label}
                 </span>
               )}
-              {avoid && !optimal && (
+              {callWindow && avoid && !optimal && (
                 <span className="text-xs text-textMuted inline-flex items-center gap-1">
-                  <Clock className="h-3.5 w-3.5" strokeWidth={2} /> Hors créneau
-                  idéal
+                  <Clock className="h-3.5 w-3.5" strokeWidth={2} /> Hors créneau · idéal {callWindow.label}
+                </span>
+              )}
+              {callWindow && !optimal && !avoid && (
+                <span className="text-xs text-textMuted/70 inline-flex items-center gap-1">
+                  <Clock className="h-3.5 w-3.5" strokeWidth={2} /> Idéal : {callWindow.label}
                 </span>
               )}
             </div>
@@ -115,7 +127,7 @@ export function TriCard({
             {candidate.phone && (
               <a
                 href={`tel:${candidate.phone}`}
-                className="inline-flex items-center gap-2 text-sm font-mono text-warmDark hover:text-accent transition"
+                className="inline-flex items-center gap-2 text-sm font-mono text-warmDark dark:text-cream hover:text-accent transition"
                 title="Appeler (T)"
               >
                 <Phone className="h-4 w-4" />
@@ -124,7 +136,7 @@ export function TriCard({
             )}
             {(candidate.gmaps_rating !== null ||
               candidate.gmaps_reviews !== null) && (
-              <span className="inline-flex items-center gap-1.5 text-sm font-mono text-warmDark">
+              <span className="inline-flex items-center gap-1.5 text-sm font-mono text-warmDark dark:text-cream">
                 <Star
                   className="h-4 w-4 text-snooze fill-snooze"
                   strokeWidth={1.5}
@@ -148,7 +160,7 @@ export function TriCard({
           <div className="mt-5 flex items-center gap-4 text-xs text-textMuted">
             <span>
               score{" "}
-              <span className="font-mono text-warmDark">{candidate.score}</span>
+              <span className="font-mono text-warmDark dark:text-cream">{candidate.score}</span>
             </span>
             {candidate.times_seen > 1 && (
               <Pill tone="neutral">vu {candidate.times_seen}×</Pill>
@@ -184,25 +196,25 @@ export function TriCard({
         </div>
 
         {/* Bandeau actions */}
-        <div className="grid grid-cols-3 border-t border-mid divide-x divide-mid bg-cream/40">
+        <div className="grid grid-cols-3 border-t border-mid dark:border-nightBorder divide-x divide-mid dark:divide-nightBorder bg-cream/40 dark:bg-nightSurface/60">
           <ActionButton
             tone="reject"
             icon={<XIcon className="h-4 w-4" />}
-            label="Rejeter"
+            label="Pas intéressé"
             kbd={<><ArrowLeft className="h-3 w-3 inline" /> / K</>}
             onClick={onReject}
           />
           <ActionButton
             tone="snooze"
             icon={<Clock className="h-4 w-4" />}
-            label="Snoozer"
+            label="Rappeler plus tard"
             kbd={<><ArrowUp className="h-3 w-3 inline" /> / L</>}
             onClick={onSnooze}
           />
           <ActionButton
             tone="accent2"
             icon={<Check className="h-4 w-4" />}
-            label="Qualifier"
+            label="Intéressé"
             kbd={<><ArrowRight className="h-3 w-3 inline" /> / D</>}
             onClick={onQualify}
           />

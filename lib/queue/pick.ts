@@ -2,6 +2,7 @@ import { dbConnect } from "@/lib/db";
 import { Prospect } from "@/models/Prospect";
 import { weightAt } from "@/lib/trade/calltime";
 import type { TradeBucket } from "@/lib/trade/detect";
+import { scoreV2 } from "@/lib/scoring/score";
 
 /**
  * Forme allégée retournée au client — pas de raw, pas d'historique.
@@ -76,7 +77,7 @@ export async function pickNext(
       gmaps_rating: 1,
       gmaps_reviews: 1,
       has_website: 1,
-      score: 1,
+      keys: 1,
       trade: 1,
       times_seen: 1,
       og: 1,
@@ -88,8 +89,9 @@ export async function pickNext(
 
   if (candidates.length === 0) return null;
 
+  // Score calculé à la volée (scoreV2) — non persisté, reflète la logique actuelle.
   const weights = candidates.map((c) =>
-    combinedWeight(c.score ?? 0, (c.trade ?? null) as TradeBucket | null, now)
+    combinedWeight(liveScore(c), (c.trade ?? null) as TradeBucket | null, now)
   );
   const idx = rouletteIndex(weights);
   const pick = candidates[idx]!;
@@ -102,6 +104,19 @@ export type ProspectRow = Awaited<
 > extends Array<infer T>
   ? T
   : never;
+
+function liveScore(p: Record<string, unknown>): number {
+  const keys = (p.keys ?? {}) as { domain?: string | null };
+  return scoreV2({
+    phone: (p.phone as string | null) ?? null,
+    has_website: Boolean(p.has_website),
+    website_url: (p.website_url as string | null) ?? null,
+    keys,
+    gmaps_reviews: (p.gmaps_reviews as number | null) ?? null,
+    gmaps_rating: (p.gmaps_rating as number | null) ?? null,
+    trade: (p.trade as TradeBucket | null) ?? null,
+  });
+}
 
 function toCandidate(p: Record<string, unknown>): TriCandidate {
   const og =
@@ -125,7 +140,7 @@ function toCandidate(p: Record<string, unknown>): TriCandidate {
     gmaps_rating: (p.gmaps_rating as number | null) ?? null,
     gmaps_reviews: (p.gmaps_reviews as number | null) ?? null,
     has_website: Boolean(p.has_website),
-    score: Number(p.score ?? 0),
+    score: liveScore(p),
     trade: (p.trade as TradeBucket | null) ?? null,
     times_seen: Number(p.times_seen ?? 1),
     og: og && (og.title || og.description || og.image) ? og : null,

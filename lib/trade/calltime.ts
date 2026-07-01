@@ -89,4 +89,18 @@ export function isAvoidNow(bucket: TradeBucket | null, now: Date = new Date()): 
   return weightAt(bucket, now) <= POIDS_AVOID;
 }
 
+function fmtHour(h: number): string {
+  const hh = Math.floor(h);
+  const mm = Math.round((h - hh) * 60);
+  return mm === 0 ? `${hh}h` : `${hh}h${mm.toString().padStart(2, "0")}`;
+}
+
+/** Retourne la plage idéale sous forme lisible, ou null si métier inconnu. */
+export function getCallWindow(bucket: TradeBucket | null): { label: string } | null {
+  if (!bucket) return null;
+  const cfg = WINDOWS[bucket];
+  if (!cfg) return null;
+  return { label: `${fmtHour(cfg.window[0])}–${fmtHour(cfg.window[1])}` };
+}
+
 export { WINDOWS };

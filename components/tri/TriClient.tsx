@@ -3,7 +3,7 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import { AnimatePresence, motion } from "framer-motion";
 import { useHotkeys } from "react-hotkeys-hook";
-import { Inbox, RefreshCw, Check, X as XIcon, Clock } from "lucide-react";
+import { Inbox, RefreshCw, Check, X as XIcon, Clock, Bell, ArrowRight } from "lucide-react";
 import { TriCard } from "./TriCard";
 import { SnoozeDialog } from "./SnoozeDialog";
 import { PrepAppelPanel } from "./PrepAppelPanel";
@@ -18,6 +18,12 @@ type UndoSnapshot = {
   lifecycle: string;
   pipeline_status: string | null;
   snooze_until: string | null;
+};
+
+type PostActionState = {
+  prospectId: string;
+  prospectName: string;
+  action: "qualify" | "snooze";
 };
 
 type SessionStats = { qualified: number; rejected: number; snoozed: number };
@@ -45,6 +51,7 @@ export function TriClient() {
     text: string;
     tone: "neutral" | "success" | "danger";
   }>({ open: false, text: "", tone: "neutral" });
+  const [postAction, setPostAction] = useState<PostActionState | null>(null);
   const [now, setNow] = useState(() => new Date());
   // IDs déjà vus dans CETTE session, pour éviter de retomber tout de suite dessus en cas d'undo+re-pick.
   const sessionSeen = useRef<Set<string>>(new Set());
@@ -135,8 +142,10 @@ export function TriClient() {
     ) => {
       if (!current || busyRef.current) return;
       busyRef.current = true;
+      const prospectId = current.id;
+      const prospectName = current.name;
       try {
-        const r = await fetch(`/api/prospects/${current.id}/decide`, {
+        const r = await fetch(`/api/prospects/${prospectId}/decide`, {
           method: "POST",
           headers: { "content-type": "application/json" },
           body: JSON.stringify({
@@ -160,7 +169,7 @@ export function TriClient() {
           return;
         }
         setUndoStack((s) =>
-          [{ prospectId: current.id, ...data.snapshot! }, ...s].slice(0, UNDO_MAX)
+          [{ prospectId, ...data.snapshot! }, ...s].slice(0, UNDO_MAX)
         );
         setStats((p) => ({
           qualified: p.qualified + (action === "qualify" ? 1 : 0),
@@ -170,18 +179,11 @@ export function TriClient() {
         const dir: Direction =
           action === "qualify" ? "right" : action === "reject" ? "left" : "up";
         await advance(dir);
-        showToast(
-          action === "qualify"
-            ? "Qualifié"
-            : action === "reject"
-              ? "Rejeté"
-              : "Snoozé",
-          action === "qualify"
-            ? "success"
-            : action === "reject"
-              ? "danger"
-              : "neutral"
-        );
+        if (action === "qualify" || action === "snooze") {
+          setPostAction({ prospectId, prospectName, action });
+        } else {
+          showToast("Pas intéressé", "danger");
+        }
       } finally {
         busyRef.current = false;
       }
@@ -330,6 +332,19 @@ export function TriClient() {
         </motion.div>
       </AnimatePresence>
 
+      {postAction && (
+        <PostActionPanel
+          prospectId={postAction.prospectId}
+          prospectName={postAction.prospectName}
+          action={postAction.action}
+          onClose={(note) => {
+            if (note) showToast("Note enregistrée", "success");
+            else showToast(postAction.action === "qualify" ? "Intéressé ✓" : "Rappel programmé", postAction.action === "qualify" ? "success" : "neutral");
+            setPostAction(null);
+          }}
+        />
+      )}
+
       <SnoozeDialog
         open={snoozeOpen}
         onClose={() => setSnoozeOpen(false)}
@@ -377,8 +392,8 @@ function EndOfQueue({
           </div>
           <h2 className="text-xl font-semibold">File terminée</h2>
           <p className="mt-2 text-sm text-textMuted max-w-md mx-auto">
-            Plus rien à trier pour le moment. Les snoozes réapparaîtront le jour
-            J. Importe un nouveau run pour continuer.
+            Plus rien à appeler pour le moment. Les rappels programmés
+            réapparaîtront à leur date. Importe un nouveau run pour continuer.
           </p>
 
           <div className="mt-6 inline-flex gap-3">
@@ -386,19 +401,19 @@ function EndOfQueue({
               icon={<Check className="h-3.5 w-3.5" />}
               tone="accent2"
               value={stats.qualified}
-              label="qualifiés"
+              label="intéressés"
             />
             <RecapPill
               icon={<XIcon className="h-3.5 w-3.5" />}
               tone="reject"
               value={stats.rejected}
-              label="rejetés"
+              label="archivés"
             />
             <RecapPill
               icon={<Clock className="h-3.5 w-3.5" />}
               tone="snooze"
               value={stats.snoozed}
-              label="snoozés"
+              label="rappelés"
             />
           </div>
 
@@ -416,6 +431,122 @@ function EndOfQueue({
           </div>
         </CardBody>
       </Card>
+    </div>
+  );
+}
+
+function PostActionPanel({
+  prospectId,
+  prospectName,
+  action,
+  onClose,
+}: {
+  prospectId: string;
+  prospectName: string;
+  action: "qualify" | "snooze";
+  onClose: (noteSaved: boolean) => void;
+}) {
+  const [note, setNote] = useState("");
+  const [saving, setSaving] = useState(false);
+
+  const addReminderDays = async (days: number) => {
+    const due = new Date();
+    due.setDate(due.getDate() + days);
+    due.setHours(9, 0, 0, 0);
+    await fetch("/api/reminders", {
+      method: "POST",
+      headers: { "content-type": "application/json" },
+      body: JSON.stringify({
+        prospect_id: prospectId,
+        due_at: due.toISOString(),
+        label: `Rappel J+${days}`,
+        kind: "simple",
+      }),
+    });
+  };
+
+  const handleContinue = async (reminderDays?: number) => {
+    setSaving(true);
+    let noteSaved = false;
+    try {
+      if (note.trim()) {
+        await fetch(`/api/prospects/${prospectId}/notes`, {
+          method: "POST",
+          headers: { "content-type": "application/json" },
+          body: JSON.stringify({ body: note.trim() }),
+        });
+        noteSaved = true;
+      }
+      if (reminderDays) await addReminderDays(reminderDays);
+    } finally {
+      setSaving(false);
+      onClose(noteSaved);
+    }
+  };
+
+  return (
+    <div className="fixed inset-0 z-40 flex items-center justify-center bg-black/20 backdrop-blur-[2px]">
+      <div className="bg-white rounded-2xl shadow-warm border border-mid w-full max-w-md mx-4 overflow-hidden">
+        <div className="px-5 py-4 border-b border-mid flex items-center gap-2">
+          {action === "qualify" ? (
+            <Check className="h-4 w-4 text-accent2" />
+          ) : (
+            <Bell className="h-4 w-4 text-snooze" />
+          )}
+          <span className="font-medium text-sm">
+            {action === "qualify" ? "Noté comme intéressé" : "Rappel programmé"}
+          </span>
+          <span className="text-xs text-textMuted ml-1">· {prospectName}</span>
+        </div>
+
+        <div className="p-5 space-y-4">
+          <div>
+            <label className="text-xs text-textMuted mb-1.5 block">
+              Que s&apos;est-il passé ? (optionnel)
+            </label>
+            <textarea
+              autoFocus
+              value={note}
+              onChange={(e) => setNote(e.target.value)}
+              placeholder="Occupé, rappeler la semaine prochaine…"
+              rows={2}
+              className="w-full rounded-xl border border-mid px-3 py-2 text-sm resize-none focus:border-accent focus:ring-2 focus:ring-accent/20 focus:outline-none"
+            />
+          </div>
+
+          <div>
+            <p className="text-xs text-textMuted mb-2">Programmer un rappel ?</p>
+            <div className="flex gap-2 flex-wrap">
+              {[
+                { days: 3, label: "+3j" },
+                { days: 7, label: "+7j" },
+                { days: 14, label: "+14j" },
+                { days: 30, label: "+30j" },
+              ].map(({ days, label }) => (
+                <button
+                  key={days}
+                  disabled={saving}
+                  onClick={() => handleContinue(days)}
+                  className="rounded-full border border-mid px-3 py-1.5 text-xs hover:border-accent hover:text-accent transition"
+                >
+                  {label}
+                </button>
+              ))}
+            </div>
+          </div>
+        </div>
+
+        <div className="px-5 py-3 border-t border-mid">
+          <button
+            disabled={saving}
+            onClick={() => handleContinue()}
+            className="inline-flex items-center gap-2 text-xs text-textMuted hover:text-warmDark transition"
+          >
+            {note.trim() ? "Enregistrer et continuer" : "Continuer sans noter"}
+            <ArrowRight className="h-3.5 w-3.5" />
+          </button>
+        </div>
+      </div>
     </div>
   );
 }

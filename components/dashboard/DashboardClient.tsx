@@ -3,16 +3,15 @@
 import { useCallback, useEffect, useState } from "react";
 import Link from "next/link";
 import {
-  AlertCircle,
   CalendarDays,
   Calendar,
-  AlertTriangle,
   ZapOff,
   Loader2,
   Check,
   ChevronRight,
   Clock,
   Trash2,
+  ChevronDown,
 } from "lucide-react";
 import { Card, CardBody } from "@/components/ui/Card";
 import { Pill } from "@/components/ui/Pill";
@@ -63,6 +62,7 @@ function fmtDue(iso: string) {
 export function DashboardClient() {
   const [data, setData] = useState<Buckets | null>(null);
   const [loading, setLoading] = useState(true);
+  const [gererOpen, setGererOpen] = useState(false);
   const [toast, setToast] = useState<{
     open: boolean;
     text: string;
@@ -126,47 +126,31 @@ export function DashboardClient() {
     );
   }
 
+  const maintenant = [...data.en_retard, ...data.aujourd_hui];
+  const maintenantTone: "reject" | "accent" =
+    data.en_retard.length > 0 ? "reject" : "accent";
+
+  const gererCount =
+    data.relances_epuisees.length + data.sans_prochaine_action.length;
+
   return (
     <div className="space-y-5">
-      <BucketSection
-        icon={AlertCircle}
-        title="En retard"
-        tone="reject"
-        count={data.en_retard.length}
-      >
-        {data.en_retard.length === 0 ? (
-          <Empty>Rien en retard. Propre.</Empty>
-        ) : (
-          <ul className="divide-y divide-mid">
-            {data.en_retard.map((r) => (
-              <ReminderItem
-                key={r._id}
-                row={r}
-                accent="reject"
-                onDone={() => markDone(r._id)}
-                onReschedule={(d) => reschedule(r._id, d)}
-                onDelete={() => deleteReminder(r._id)}
-              />
-            ))}
-          </ul>
-        )}
-      </BucketSection>
-
+      {/* Bucket 1 : À faire maintenant (en retard + aujourd'hui fusionnés) */}
       <BucketSection
         icon={Calendar}
-        title="Aujourd'hui"
-        tone="accent"
-        count={data.aujourd_hui.length}
+        title="À faire maintenant"
+        tone={maintenantTone}
+        count={maintenant.length}
       >
-        {data.aujourd_hui.length === 0 ? (
-          <Empty>Rien à faire aujourd'hui.</Empty>
+        {maintenant.length === 0 ? (
+          <Empty>Rien d&apos;urgent. Tu es à jour.</Empty>
         ) : (
           <ul className="divide-y divide-mid">
-            {data.aujourd_hui.map((r) => (
+            {maintenant.map((r) => (
               <ReminderItem
                 key={r._id}
                 row={r}
-                accent="accent"
+                accent={data.en_retard.find((x) => x._id === r._id) ? "reject" : "accent"}
                 onDone={() => markDone(r._id)}
                 onReschedule={(d) => reschedule(r._id, d)}
                 onDelete={() => deleteReminder(r._id)}
@@ -176,6 +160,7 @@ export function DashboardClient() {
         )}
       </BucketSection>
 
+      {/* Bucket 2 : Cette semaine */}
       <BucketSection
         icon={CalendarDays}
         title="Cette semaine"
@@ -183,7 +168,7 @@ export function DashboardClient() {
         count={data.cette_semaine.length}
       >
         {data.cette_semaine.length === 0 ? (
-          <Empty>Rien cette semaine.</Empty>
+          <Empty>Rien de prévu cette semaine.</Empty>
         ) : (
           <ul className="divide-y divide-mid">
             {data.cette_semaine.map((r) => (
@@ -200,41 +185,55 @@ export function DashboardClient() {
         )}
       </BucketSection>
 
-      <BucketSection
-        icon={ZapOff}
-        title="Relances épuisées"
-        tone="neutral"
-        count={data.relances_epuisees.length}
-        hint="3 relances envoyées sans réponse. Décision manuelle requise."
-      >
-        {data.relances_epuisees.length === 0 ? (
-          <Empty>Aucune escalade arrivée à terme.</Empty>
-        ) : (
-          <ul className="divide-y divide-mid">
-            {data.relances_epuisees.map((p) => (
-              <ProspectItem key={p._id} row={p} tone="neutral" />
-            ))}
-          </ul>
-        )}
-      </BucketSection>
-
-      <BucketSection
-        icon={AlertTriangle}
-        title="Sans prochaine action"
-        tone="warn"
-        count={data.sans_prochaine_action.length}
-        hint="Prospects qualifiés actifs sans rappel ouvert."
-      >
-        {data.sans_prochaine_action.length === 0 ? (
-          <Empty>Tout a une suite. Bravo.</Empty>
-        ) : (
-          <ul className="divide-y divide-mid">
-            {data.sans_prochaine_action.map((p) => (
-              <ProspectItem key={p._id} row={p} tone="warn" />
-            ))}
-          </ul>
-        )}
-      </BucketSection>
+      {/* Bucket 3 : À gérer (collapsible, s'ouvre seulement si non vide) */}
+      {gererCount > 0 && (
+        <div>
+          <button
+            onClick={() => setGererOpen((v) => !v)}
+            className="w-full flex items-center justify-between px-5 py-3 rounded-2xl border border-mid dark:border-nightBorder bg-white dark:bg-nightSurface text-sm font-medium hover:bg-cream/60 dark:hover:bg-nightBorder/40 transition"
+          >
+            <span className="flex items-center gap-2 text-textMuted">
+              <ZapOff className="h-4 w-4" />
+              À gérer
+              <span className="font-mono text-xs">({gererCount})</span>
+            </span>
+            <ChevronDown
+              className={cn(
+                "h-4 w-4 text-textMuted transition-transform",
+                gererOpen && "rotate-180"
+              )}
+            />
+          </button>
+          {gererOpen && (
+            <div className="mt-2 space-y-3">
+              {data.relances_epuisees.length > 0 && (
+                <div className="rounded-2xl border border-mid dark:border-nightBorder bg-white dark:bg-nightSurface overflow-hidden">
+                  <div className="px-5 py-2.5 border-b border-mid dark:border-nightBorder text-xs font-medium text-textMuted">
+                    Rappels épuisés — 3/3 sans réponse · décision manuelle
+                  </div>
+                  <ul className="divide-y divide-mid dark:divide-nightBorder">
+                    {data.relances_epuisees.map((p) => (
+                      <ProspectItem key={p._id} row={p} tone="neutral" />
+                    ))}
+                  </ul>
+                </div>
+              )}
+              {data.sans_prochaine_action.length > 0 && (
+                <div className="rounded-2xl border border-mid dark:border-nightBorder bg-white dark:bg-nightSurface overflow-hidden">
+                  <div className="px-5 py-2.5 border-b border-mid dark:border-nightBorder text-xs font-medium text-textMuted">
+                    Contacts retenus sans rappel programmé
+                  </div>
+                  <ul className="divide-y divide-mid dark:divide-nightBorder">
+                    {data.sans_prochaine_action.map((p) => (
+                      <ProspectItem key={p._id} row={p} tone="warn" />
+                    ))}
+                  </ul>
+                </div>
+              )}
+            </div>
+          )}
+        </div>
+      )}
 
       <Toast open={toast.open} tone={toast.tone}>
         {toast.text}
@@ -248,14 +247,12 @@ function BucketSection({
   title,
   tone,
   count,
-  hint,
   children,
 }: {
   icon: LucideIcon;
   title: string;
   tone: "reject" | "accent" | "accent2" | "warn" | "neutral";
   count: number;
-  hint?: string;
   children: React.ReactNode;
 }) {
   const dotClass =
@@ -270,14 +267,11 @@ function BucketSection({
             : "bg-textMuted";
   return (
     <Card>
-      <div className="px-5 py-3 border-b border-mid flex items-center justify-between">
-        <div className="flex items-center gap-3">
-          <span className={cn("h-2 w-2 rounded-full", dotClass)} />
-          <Icon className="h-4 w-4 text-warmDark" strokeWidth={2} />
-          <h2 className="text-sm font-semibold">{title}</h2>
-          <span className="text-xs text-textMuted font-mono">({count})</span>
-        </div>
-        {hint && <p className="text-xs text-textMuted">{hint}</p>}
+      <div className="px-5 py-3 border-b border-mid dark:border-nightBorder flex items-center gap-3">
+        <span className={cn("h-2 w-2 rounded-full", dotClass)} />
+        <Icon className="h-4 w-4 text-warmDark dark:text-cream" strokeWidth={2} />
+        <h2 className="text-sm font-semibold">{title}</h2>
+        <span className="text-xs text-textMuted font-mono">({count})</span>
       </div>
       <div>{children}</div>
     </Card>
@@ -303,7 +297,7 @@ function ReminderItem({
 }) {
   const isRelance = row.kind === "relance";
   return (
-    <li className="px-5 py-3 flex items-center gap-4 hover:bg-cream/60 transition group">
+    <li className="px-5 py-3 flex items-center gap-4 hover:bg-cream/60 dark:hover:bg-nightBorder/30 transition group">
       <div className="flex-1 min-w-0">
         <Link
           href={`/crm/${row.prospect_id}`}
@@ -317,7 +311,7 @@ function ReminderItem({
           {row.label && <span>· {row.label}</span>}
           {isRelance && row.relance_index && (
             <Pill tone="warn">
-              Relance {row.relance_index}/3 · priorité {row.priority}
+              Rappel {row.relance_index}/3
             </Pill>
           )}
         </div>
@@ -409,7 +403,7 @@ function ProspectItem({
               </Pill>
             )}
             {row.relance_count >= 3 && (
-              <span>3/3 relances envoyées</span>
+              <span>3/3 rappels sans réponse</span>
             )}
           </div>
         </div>

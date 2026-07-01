@@ -9,8 +9,8 @@ export const PIPELINE_ORDER: PipelineStatus[] = [
 ];
 
 export const PIPELINE_LABEL: Record<PipelineStatus, string> = {
-  a_contacter: "À contacter",
-  contacte: "Contacté",
+  a_contacter: "À appeler",
+  contacte: "Appelé",
   rdv_pris: "RDV pris",
   client: "Client",
   perdu: "Perdu",

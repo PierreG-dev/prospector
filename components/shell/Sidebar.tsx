@@ -15,10 +15,10 @@ import { cn } from "@/lib/cn";
 type NavItem = { href: string; label: string; icon: LucideIcon };
 
 const items: NavItem[] = [
-  { href: "/dashboard", label: "Dashboard", icon: LayoutDashboard },
+  { href: "/dashboard", label: "Aujourd'hui", icon: LayoutDashboard },
   { href: "/import", label: "Import", icon: Upload },
-  { href: "/tri", label: "Tri", icon: Layers },
-  { href: "/crm", label: "CRM", icon: Users },
+  { href: "/tri", label: "File d'appels", icon: Layers },
+  { href: "/crm", label: "Contacts", icon: Users },
   { href: "/settings", label: "Réglages", icon: Settings },
 ];
 

@@ -106,7 +106,7 @@ export function CrmList() {
                 : "text-textMuted hover:text-warmDark"
             )}
           >
-            {l === "qualified" ? "Qualifiés" : "Rejetés"}
+            {l === "qualified" ? "Retenus" : "Archivés"}
           </button>
         ))}
       </div>
@@ -180,13 +180,13 @@ export function CrmList() {
           icon={Users}
           title={
             lifecycle === "qualified"
-              ? "Aucun prospect qualifié"
-              : "Aucun prospect rejeté"
+              ? "Aucun contact retenu"
+              : "Aucun contact archivé"
           }
           hint={
             lifecycle === "qualified"
-              ? "Trie quelques cartes dans /tri pour les retrouver ici."
-              : "Les prospects rejetés depuis la file de tri apparaîtront ici."
+              ? "Marque quelques prospects comme intéressés dans la file d'appels."
+              : "Les prospects archivés depuis la file d'appels apparaîtront ici."
           }
         />
       ) : (
@@ -212,7 +212,7 @@ export function CrmList() {
                         p.relance_count != null &&
                         p.relance_count > 0 && (
                           <Pill tone="warn">
-                            relance {p.relance_count}/3
+                            rappel {p.relance_count}/3
                             {p.relance_paused ? " · pause" : ""}
                           </Pill>
                         )}
