@@ -13,6 +13,7 @@
   },
   "dependencies": {
     "framer-motion": "^11.11.0",
+    "jose": "^6.2.3",
     "libphonenumber-js": "^1.11.0",
     "lucide-react": "^0.460.0",
     "mongoose": "^8.8.0",
