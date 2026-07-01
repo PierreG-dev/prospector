@@ -180,7 +180,7 @@ export function CrmFiche({ id }: { id: string }) {
               <div className="mt-5 flex flex-wrap items-center gap-3 text-sm">
                 {data.phone && (
                   <a
-                    href={`tel:${data.phone}`}
+                    href={`tel:${data.phone.replace(/[^\d+]/g, "")}`}
                     className="inline-flex items-center gap-2 rounded-full border border-mid px-3 py-1.5 hover:border-accent hover:text-accent transition"
                   >
                     <Phone className="h-3.5 w-3.5" />

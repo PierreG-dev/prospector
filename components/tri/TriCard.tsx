@@ -86,19 +86,19 @@ export function TriCard({
               <Pill tone="accent2" icon={<span aria-hidden>·</span>}>
                 {candidate.trade}
               </Pill>
-              {callWindow && optimal && (
-                <span className="text-xs text-accent2 font-medium inline-flex items-center gap-1">
-                  <Clock className="h-3.5 w-3.5" strokeWidth={2} /> Idéal maintenant · {callWindow.label}
-                </span>
-              )}
-              {callWindow && avoid && !optimal && (
-                <span className="text-xs text-textMuted inline-flex items-center gap-1">
-                  <Clock className="h-3.5 w-3.5" strokeWidth={2} /> Hors créneau · idéal {callWindow.label}
-                </span>
-              )}
-              {callWindow && !optimal && !avoid && (
-                <span className="text-xs text-textMuted/70 inline-flex items-center gap-1">
-                  <Clock className="h-3.5 w-3.5" strokeWidth={2} /> Idéal : {callWindow.label}
+              {callWindow && (
+                <span
+                  className={cn(
+                    "text-xs font-medium inline-flex items-center gap-1",
+                    optimal
+                      ? "text-accent2"
+                      : avoid
+                        ? "text-snooze"
+                        : "text-snooze/80"
+                  )}
+                >
+                  <Clock className="h-3.5 w-3.5" strokeWidth={2} />
+                  {optimal ? `Idéal maintenant · ${callWindow.label}` : `Idéal : ${callWindow.label}`}
                 </span>
               )}
             </div>
@@ -126,7 +126,7 @@ export function TriCard({
             )}
             {candidate.phone && (
               <a
-                href={`tel:${candidate.phone}`}
+                href={`tel:${candidate.phone.replace(/[^\d+]/g, "")}`}
                 className="inline-flex items-center gap-2 text-sm font-mono text-warmDark dark:text-cream hover:text-accent transition"
                 title="Appeler (T)"
               >

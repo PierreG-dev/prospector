@@ -77,10 +77,17 @@ export async function pickNext(
   if (candidates.length === 0) return null;
 
   // Score calculé à la volée (scoreV2) — non persisté, reflète la logique actuelle.
-  const weights = candidates.map((c) =>
-    combinedWeight(liveScore(c), (c.trade ?? null) as TradeBucket | null, now)
+  const scores = candidates.map((c) => liveScore(c));
+  let weights = candidates.map((c, i) =>
+    combinedWeight(scores[i]!, (c.trade ?? null) as TradeBucket | null, now)
   );
-  const idx = rouletteIndex(weights);
+  // Si tous les poids sont à 0 (ex. tous en zone avoid), on retombe sur score seul.
+  if (weights.every((w) => w <= 0)) {
+    weights = scores;
+  }
+  // Sélection déterministe : le poids le plus élevé gagne toujours.
+  // Un mauvais score ne peut jamais passer devant un bon, même hors créneau.
+  const idx = argmax(weights);
   const pick = candidates[idx]!;
 
   return toCandidate(pick);
@@ -146,16 +153,13 @@ export async function countQueue(now: Date = new Date()): Promise<number> {
   });
 }
 
-/** Tirage roulette : index pondéré par les valeurs. Exposé pour les tests. */
-export function rouletteIndex(weights: number[]): number {
-  const total = weights.reduce((a, b) => a + Math.max(b, 0), 0);
-  if (total <= 0) return Math.floor(Math.random() * weights.length);
-  let r = Math.random() * total;
-  for (let i = 0; i < weights.length; i++) {
-    r -= Math.max(weights[i]!, 0);
-    if (r <= 0) return i;
+/** Retourne l'index du poids maximal. En cas d'égalité, prend le premier. */
+export function argmax(weights: number[]): number {
+  let best = 0;
+  for (let i = 1; i < weights.length; i++) {
+    if (weights[i]! > weights[best]!) best = i;
   }
-  return weights.length - 1;
+  return best;
 }
 
 export { combinedWeight };

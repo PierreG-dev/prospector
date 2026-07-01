@@ -5,6 +5,7 @@ import { FileText, X } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
 import type { TriCandidate } from "@/lib/queue/pick";
 import { Button } from "@/components/ui/Button";
+import { getInvoiceEstimate, formatEur, unitLabel } from "@/lib/trade/invoice";
 
 export function PrepAppelPanel({
   open,
@@ -85,7 +86,7 @@ export function PrepAppelPanel({
               <div className="space-y-2 text-sm">
                 {candidate.phone ? (
                   <a
-                    href={`tel:${candidate.phone}`}
+                    href={`tel:${candidate.phone.replace(/[^\d+]/g, "")}`}
                     className="flex items-center justify-between rounded-xl border border-mid bg-white px-3 py-2 hover:border-accent transition"
                   >
                     <span className="font-mono">{candidate.phone}</span>
@@ -135,6 +136,30 @@ export function PrepAppelPanel({
                 </p>
               </section>
             )}
+
+            {candidate.trade && (() => {
+              const est = getInvoiceEstimate(candidate.trade);
+              if (!est) return null;
+              return (
+                <section>
+                  <h3 className="text-[11px] uppercase tracking-wider text-textMuted mb-2">
+                    Facture moyenne estimée
+                  </h3>
+                  <div className="rounded-xl border border-mid bg-white px-3 py-2.5">
+                    <p className="text-sm">
+                      <span className="font-semibold text-warmDark">{formatEur(est.typical)}</span>
+                      <span className="text-textMuted"> · {unitLabel(est.unit)}</span>
+                    </p>
+                    <p className="text-[11px] text-textMuted mt-0.5 font-mono">
+                      fourchette {formatEur(est.low)} – {formatEur(est.high)}
+                    </p>
+                    {est.note && (
+                      <p className="text-[11px] text-textMuted mt-1 italic">{est.note}</p>
+                    )}
+                  </div>
+                </section>
+              );
+            })()}
 
             <section>
               <h3 className="text-[11px] uppercase tracking-wider text-textMuted mb-2">

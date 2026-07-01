@@ -261,7 +261,7 @@ export function TriClient() {
     () => {
       if (!enable) return;
       const tel = current?.phone;
-      if (tel) window.location.href = `tel:${tel}`;
+      if (tel) window.location.href = `tel:${tel.replace(/[^\d+]/g, "")}`;
     },
     [enable, current]
   );
