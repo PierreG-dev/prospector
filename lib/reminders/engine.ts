@@ -41,7 +41,7 @@ export function nextRelanceState(args: {
     return { new_count, new_next_at: null, relance_index };
   }
   const next = new Date(args.now);
-  next.setDate(next.getDate() + delays[relance_index]);
+  next.setDate(next.getDate() + delays[relance_index - 1]);
   return { new_count, new_next_at: next, relance_index };
 }
 

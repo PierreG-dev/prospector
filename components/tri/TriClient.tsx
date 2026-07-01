@@ -15,6 +15,7 @@ import type { TriCandidate } from "@/lib/queue/pick";
 
 type UndoSnapshot = {
   prospectId: string;
+  action: "qualify" | "reject" | "snooze";
   lifecycle: string;
   pipeline_status: string | null;
   snooze_until: string | null;
@@ -169,7 +170,7 @@ export function TriClient() {
           return;
         }
         setUndoStack((s) =>
-          [{ prospectId, ...data.snapshot! }, ...s].slice(0, UNDO_MAX)
+          [{ prospectId, action, ...data.snapshot! }, ...s].slice(0, UNDO_MAX)
         );
         setStats((p) => ({
           qualified: p.qualified + (action === "qualify" ? 1 : 0),
@@ -210,32 +211,15 @@ export function TriClient() {
         return;
       }
       setUndoStack(rest);
-      // On ramène le prospect au sommet, et on garde le suivant pour la prochaine fois.
-      // Pour ça on doit le re-fetch depuis l'API (il a maintenant son ancien lifecycle).
-      // Plus simple : on attend la prochaine recharge naturelle. Ici on push le current en buffer next.
-      const ressurected = await fetch(`/api/prospects/next?exclude=`)
-        .then((res) => res.json())
-        .then(
-          (d: { candidate: TriCandidate | null; remaining: number }) => {
-            setRemaining(d.remaining);
-            return d.candidate;
-          }
-        );
-      // On force la carte récupérée à être celle de l'undo si possible :
-      if (ressurected && ressurected.id !== last.prospectId) {
-        // Pas pile la même : on ramène quand même celle-ci (l'autre ressortira plus tard via la roulette).
-      }
-      if (current) setNext(current);
-      setCurrent(ressurected);
       sessionSeen.current.delete(last.prospectId);
-      // Décompte stats — on ignore quelle action était, c'est OK : -1 sur la dernière action
-      // En vérité on sait via le snapshot.lifecycle d'origine mais c'est plus simple comme ça.
-      // On pop la stat correspondante de la dernière action :
-      setStats((p) => {
-        // approximation : on retire 1 sur la stat la plus probable (ordre des dernières) — UX OK
-        // mieux : stocker l'action dans undoStack.
-        return p;
-      });
+      const resurrected = await fetchNext();
+      if (current) setNext(current);
+      setCurrent(resurrected);
+      setStats((p) => ({
+        qualified: p.qualified - (last.action === "qualify" ? 1 : 0),
+        rejected: p.rejected - (last.action === "reject" ? 1 : 0),
+        snoozed: p.snoozed - (last.action === "snooze" ? 1 : 0),
+      }));
       showToast("Annulé", "neutral");
     } finally {
       busyRef.current = false;

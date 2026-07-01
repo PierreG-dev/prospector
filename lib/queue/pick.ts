@@ -32,7 +32,9 @@ const BATCH = 50; // taille du panel sur lequel on tire à la roulette
 /**
  * Combine score (P de conversion 0-100) et fenêtre d'appel optimale → poids final.
  * - score = 0 (ex. pas de tel) → poids 0 : exclu du tirage.
- * - weightAt rend 0 pour les zones à éviter → on cape à 0.05 pour éviter la famine totale.
+ * - weightAt rend 0 pour les zones `avoid` → ces prospects ne participent pas au tirage.
+ * - trade null → POIDS_UNKNOWN (0.5), jamais 0 : pas de famine pour les métiers inconnus.
+ * - Si tous les candidats ont un poids 0, rouletteIndex fait un tirage aléatoire uniforme.
  */
 function combinedWeight(
   score: number,
@@ -40,7 +42,7 @@ function combinedWeight(
   now: Date
 ): number {
   const base = Math.max(score, 0);
-  const w = Math.max(weightAt(trade, now), 0.05);
+  const w = weightAt(trade, now);
   return base * w;
 }
 
@@ -98,12 +100,6 @@ export async function pickNext(
 
   return toCandidate(pick);
 }
-
-export type ProspectRow = Awaited<
-  ReturnType<typeof Prospect.find>
-> extends Array<infer T>
-  ? T
-  : never;
 
 function liveScore(p: Record<string, unknown>): number {
   const keys = (p.keys ?? {}) as { domain?: string | null };

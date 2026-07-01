@@ -9,7 +9,12 @@ export const runtime = "nodejs";
  * En prod, c'est `app/api/cron/run-reminders` (protégé par CRON_SECRET) qui appelle
  * le tick + le push Pushover — Lot 7.
  */
-export async function POST() {
+export async function POST(req: Request) {
+  const secret = process.env.CRON_SECRET;
+  const auth = req.headers.get("authorization") ?? "";
+  if (!secret || auth !== `Bearer ${secret}`) {
+    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  }
   const res = await tickReminders(new Date());
   return NextResponse.json(res);
 }

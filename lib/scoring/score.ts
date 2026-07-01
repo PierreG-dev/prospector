@@ -124,7 +124,7 @@ export function scoreV2(p: ScoreInput): number {
 
   const reviews = p.gmaps_reviews ?? 0;
   if (reviews >= 1 && reviews <= 5) s += 8;
-  else if (reviews <= 19) s += 14;
+  else if (reviews >= 6 && reviews <= 19) s += 14;
   else if (reviews <= 49) s += 10;
   else if (reviews <= 99) s += 6;
   else if (reviews >= 100) s += 2;

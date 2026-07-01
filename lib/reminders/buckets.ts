@@ -109,6 +109,7 @@ export async function getBuckets(now: Date = new Date()): Promise<Buckets> {
     Prospect.find({
       lifecycle: "qualified",
       pipeline_status: { $nin: [null, "perdu", "client"] },
+      relance_paused: { $ne: true },
     })
       .select({
         name: 1,
