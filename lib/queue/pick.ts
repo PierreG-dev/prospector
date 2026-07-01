@@ -27,8 +27,6 @@ export type TriCandidate = {
   snooze_until: string | null;
 };
 
-const BATCH = 50; // taille du panel sur lequel on tire à la roulette
-
 /**
  * Combine score (P de conversion 0-100) et fenêtre d'appel optimale → poids final.
  * - score = 0 (ex. pas de tel) → poids 0 : exclu du tirage.
@@ -66,27 +64,14 @@ export async function pickNext(
     query._id = { $nin: excludeIds };
   }
 
-  // On charge un panel — le tirage roulette se fait en mémoire.
+  // Charge toute la file éligible (champs légers, pas de raw/historique).
   const candidates = await Prospect.find(query)
     .select({
-      name: 1,
-      category: 1,
-      city: 1,
-      address: 1,
-      phone: 1,
-      website_url: 1,
-      gmaps_url: 1,
-      gmaps_rating: 1,
-      gmaps_reviews: 1,
-      has_website: 1,
-      keys: 1,
-      trade: 1,
-      times_seen: 1,
-      og: 1,
-      lifecycle: 1,
-      snooze_until: 1,
+      name: 1, category: 1, city: 1, address: 1, phone: 1,
+      website_url: 1, gmaps_url: 1, gmaps_rating: 1, gmaps_reviews: 1,
+      has_website: 1, keys: 1, trade: 1, times_seen: 1, og: 1,
+      lifecycle: 1, snooze_until: 1,
     })
-    .limit(BATCH)
     .lean();
 
   if (candidates.length === 0) return null;

@@ -125,9 +125,10 @@ export function scoreV2(p: ScoreInput): number {
   const reviews = p.gmaps_reviews ?? 0;
   if (reviews >= 1 && reviews <= 5) s += 8;
   else if (reviews >= 6 && reviews <= 19) s += 14;
-  else if (reviews <= 49) s += 10;
-  else if (reviews <= 99) s += 6;
+  else if (reviews >= 20 && reviews <= 49) s += 10;
+  else if (reviews >= 50 && reviews <= 99) s += 6;
   else if (reviews >= 100) s += 2;
+  // reviews=0 → 0 (inconnu, neutre)
 
   const rating = p.gmaps_rating ?? 0;
   if (rating > 0) {

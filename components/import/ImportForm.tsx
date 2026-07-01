@@ -70,7 +70,7 @@ export function ImportForm() {
             <div>
               <label
                 htmlFor="label"
-                className="text-sm font-medium text-warmDark"
+                className="text-sm font-medium text-warmDark dark:text-cream"
               >
                 Label de la campagne
               </label>
@@ -79,7 +79,7 @@ export function ImportForm() {
                 value={label}
                 onChange={(e) => setLabel(e.target.value)}
                 placeholder='Ex : "Plombiers Toulouse 06/2026"'
-                className="mt-1 w-full rounded-xl border border-mid bg-white px-4 py-2.5 text-sm placeholder:text-textMuted/60 focus:border-accent focus:ring-2 focus:ring-accent/20 focus:outline-none transition"
+                className="mt-1 w-full rounded-xl border border-mid bg-white px-4 py-2.5 text-sm placeholder:text-textMuted/60 focus:border-accent focus:ring-2 focus:ring-accent/20 focus:outline-none transition dark:bg-nightSurface dark:border-nightBorder dark:text-cream dark:placeholder:text-nightMuted/60"
               />
               <p className="mt-1 text-xs text-textMuted">
                 Vide → le nom du fichier sera utilisé.
@@ -87,7 +87,7 @@ export function ImportForm() {
             </div>
 
             <div>
-              <span className="text-sm font-medium text-warmDark">
+              <span className="text-sm font-medium text-warmDark dark:text-cream">
                 Fichier JSON Apify
               </span>
               <button
@@ -107,7 +107,7 @@ export function ImportForm() {
                   "mt-1 w-full rounded-2xl border-2 border-dashed py-10 px-6 transition-colors text-center group",
                   dragOver
                     ? "border-accent bg-accent/5"
-                    : "border-mid bg-cream/40 hover:border-accent/60"
+                    : "border-mid bg-cream/40 hover:border-accent/60 dark:border-nightBorder dark:bg-nightSurface/40 dark:hover:border-accent/60"
                 )}
               >
                 <div className="flex flex-col items-center gap-3">
@@ -232,9 +232,9 @@ function Stat({
       ? "text-accent2"
       : tone === "warn"
         ? "text-snooze"
-        : "text-warmDark";
+        : "text-warmDark dark:text-cream";
   return (
-    <div className="rounded-xl bg-cream/60 border border-mid px-3 py-2">
+    <div className="rounded-xl bg-cream/60 border border-mid px-3 py-2 dark:bg-nightSurface dark:border-nightBorder">
       <dt className="text-xs text-textMuted">{label}</dt>
       <dd className={cn("text-2xl font-mono leading-tight", toneClass)}>
         {value}
