@@ -4,8 +4,11 @@ import {
   Globe2,
   GlobeLock,
   Phone,
+  Smartphone,
   MapPin,
   Star,
+  Flame,
+  ImageOff,
   RotateCcw,
   Eye,
   Clock,
@@ -128,9 +131,17 @@ export function TriCard({
               <a
                 href={`tel:${candidate.phone.replace(/[^\d+]/g, "")}`}
                 className="inline-flex items-center gap-2 text-sm font-mono text-warmDark dark:text-cream hover:text-accent transition"
-                title="Appeler (T)"
+                title={
+                  candidate.is_mobile_phone
+                    ? "Mobile — ligne directe (T)"
+                    : "Appeler (T)"
+                }
               >
-                <Phone className="h-4 w-4" />
+                {candidate.is_mobile_phone ? (
+                  <Smartphone className="h-4 w-4 text-accent2" />
+                ) : (
+                  <Phone className="h-4 w-4" />
+                )}
                 {candidate.phone}
               </a>
             )}
@@ -172,6 +183,17 @@ export function TriCard({
                   #{candidate.gmaps_rank}
                 </span>
               </span>
+            )}
+            {candidate.latest_review_days != null &&
+              candidate.latest_review_days < 90 && (
+                <Pill tone="accent2" icon={<Flame className="h-3.5 w-3.5" />}>
+                  Actif · avis {candidate.latest_review_days}j
+                </Pill>
+              )}
+            {candidate.profile_gaps >= 2 && (
+              <Pill tone="warn" icon={<ImageOff className="h-3.5 w-3.5" />}>
+                Maps délaissé
+              </Pill>
             )}
           </div>
 

@@ -26,6 +26,17 @@ export type TriCandidate = {
   lifecycle: "inbox" | "snoozed";
   snooze_until: string | null;
   gmaps_rank: number | null;
+  latest_review_days: number | null;
+  profile_gaps: number;
+  is_mobile_phone: boolean;
+};
+
+/** Signaux extraits d'un doc Mongoose lean pour peser un candidat. */
+export type PickSignals = {
+  rank: number | null;
+  latestReviewAt: Date | null;
+  gaps: number;              // 0..3
+  phoneE164: string | null;
 };
 
 /**
@@ -43,23 +54,67 @@ export function invisibilityBoost(rank: number | null): number {
 }
 
 /**
+ * Business qui reçoit des avis récents = actif, budget, présence à laquelle il tient.
+ * < 30j  → 1.35   < 90j → 1.20   < 180j → 1.10
+ * > 365j → 0.90 (dormant)   null → 1.0
+ */
+export function freshnessBoost(latest: Date | null, now: Date): number {
+  if (!latest || Number.isNaN(latest.getTime())) return 1;
+  const days = (now.getTime() - latest.getTime()) / 86_400_000;
+  if (days < 0) return 1;         // date future absurde → neutre
+  if (days < 30) return 1.35;
+  if (days < 90) return 1.20;
+  if (days < 180) return 1.10;
+  if (days > 365) return 0.90;
+  return 1;
+}
+
+/**
+ * Nombre de "trous" du profil Maps (0..3) → boost croissant.
+ * Signaux : pas de site, imagesCount=0, openingHours vide/absent.
+ * 0→1.0  1→1.10  2→1.25  3→1.40 (jackpot : profil totalement délaissé).
+ */
+export function profileGapBoost(gaps: number): number {
+  const g = Math.max(0, Math.min(3, gaps | 0));
+  return [1.0, 1.10, 1.25, 1.40][g]!;
+}
+
+/**
+ * Mobile FR (+336…/+337…) = ligne directe = décideur. +15%.
+ */
+export function mobilePhoneBoost(phoneE164: string | null): number {
+  if (!phoneE164) return 1;
+  return /^\+33[67]/.test(phoneE164) ? 1.15 : 1;
+}
+
+/**
  * Combine score (P de conversion 0-100), fenêtre d'appel optimale et
- * boost d'invisibilité Google → poids final.
+ * les boosts "lead bouillant" → poids final.
+ *
  * - score = 0 (ex. pas de tel) → poids 0 : exclu du tirage.
  * - weightAt rend 0 pour les zones `avoid` → ces prospects ne participent pas au tirage.
  * - trade null → POIDS_UNKNOWN (0.5), jamais 0 : pas de famine pour les métiers inconnus.
- * - rank haut (fiche invisible sur Google) → boost jusqu'à ×1.75.
- * - Si tous les candidats ont un poids 0, rouletteIndex fait un tirage aléatoire uniforme.
+ * - Signaux combinés bornés (~0.67× à ~3.8×) : un signal seul ne renverse jamais
+ *   un vrai gap de score, mais l'accumulation (rank haut + avis frais + Maps bâclé + mobile)
+ *   peut légitimement remonter une fiche "chaude".
+ * - Si tous les candidats ont un poids 0, on retombe sur score seul.
  */
 function combinedWeight(
   score: number,
   trade: TradeBucket | null,
   now: Date,
-  rank: number | null = null
+  signals: PickSignals = { rank: null, latestReviewAt: null, gaps: 0, phoneE164: null }
 ): number {
   const base = Math.max(score, 0);
   const w = weightAt(trade, now);
-  return base * w * invisibilityBoost(rank);
+  return (
+    base *
+    w *
+    invisibilityBoost(signals.rank) *
+    freshnessBoost(signals.latestReviewAt, now) *
+    profileGapBoost(signals.gaps) *
+    mobilePhoneBoost(signals.phoneE164)
+  );
 }
 
 /**
@@ -82,13 +137,15 @@ export async function pickNext(
     query._id = { $nin: excludeIds };
   }
 
-  // Charge toute la file éligible (champs légers, pas de raw/historique).
+  // Charge toute la file éligible (champs légers, pas d'historique).
   const candidates = await Prospect.find(query)
     .select({
       name: 1, category: 1, city: 1, address: 1, phone: 1,
       website_url: 1, gmaps_url: 1, gmaps_rating: 1, gmaps_reviews: 1,
       has_website: 1, keys: 1, trade: 1, times_seen: 1, og: 1,
-      lifecycle: 1, snooze_until: 1, "raw.rank": 1,
+      lifecycle: 1, snooze_until: 1,
+      "raw.rank": 1, "raw.reviews": 1, "raw.updatedAt": 1,
+      "raw.imagesCount": 1, "raw.openingHours": 1,
     })
     .lean();
 
@@ -101,7 +158,7 @@ export async function pickNext(
       scores[i]!,
       (c.trade ?? null) as TradeBucket | null,
       now,
-      extractRank(c)
+      extractSignals(c)
     )
   );
   // Si tous les poids sont à 0 (ex. tous en zone avoid), on retombe sur score seul.
@@ -109,17 +166,55 @@ export async function pickNext(
     weights = scores;
   }
   // Sélection déterministe : le poids le plus élevé gagne toujours.
-  // Un mauvais score ne peut jamais passer devant un bon, même hors créneau.
   const idx = argmax(weights);
   const pick = candidates[idx]!;
 
-  return toCandidate(pick);
+  return toCandidate(pick, now);
 }
 
 function extractRank(p: Record<string, unknown>): number | null {
   const raw = p.raw as { rank?: unknown } | null | undefined;
   const r = raw?.rank;
   return typeof r === "number" && Number.isFinite(r) ? r : null;
+}
+
+function extractLatestReviewAt(p: Record<string, unknown>): Date | null {
+  const raw = p.raw as
+    | { reviews?: Array<{ publishedAtDate?: unknown }>; updatedAt?: unknown }
+    | null
+    | undefined;
+  if (!raw) return null;
+  // Le tableau reviews d'Apify google-maps-extractor est ordonné plus récent → plus ancien.
+  const first = Array.isArray(raw.reviews) ? raw.reviews[0] : null;
+  const cand = first?.publishedAtDate ?? raw.updatedAt;
+  if (typeof cand !== "string" && !(cand instanceof Date)) return null;
+  const d = cand instanceof Date ? cand : new Date(cand);
+  return Number.isNaN(d.getTime()) ? null : d;
+}
+
+function extractGaps(p: Record<string, unknown>): number {
+  const raw = p.raw as
+    | { imagesCount?: unknown; openingHours?: unknown }
+    | null
+    | undefined;
+  let gaps = 0;
+  if (!p.has_website) gaps++;
+  const imgs = raw?.imagesCount;
+  if (typeof imgs === "number" && imgs === 0) gaps++;
+  const hours = raw?.openingHours;
+  const hoursEmpty = !hours || (Array.isArray(hours) && hours.length === 0);
+  if (hoursEmpty) gaps++;
+  return gaps;
+}
+
+function extractSignals(p: Record<string, unknown>): PickSignals {
+  const keys = (p.keys ?? {}) as { phone_e164?: string | null };
+  return {
+    rank: extractRank(p),
+    latestReviewAt: extractLatestReviewAt(p),
+    gaps: extractGaps(p),
+    phoneE164: keys.phone_e164 ?? null,
+  };
 }
 
 function liveScore(p: Record<string, unknown>): number {
@@ -135,7 +230,7 @@ function liveScore(p: Record<string, unknown>): number {
   });
 }
 
-function toCandidate(p: Record<string, unknown>): TriCandidate {
+function toCandidate(p: Record<string, unknown>, now: Date): TriCandidate {
   const og =
     p.og && typeof p.og === "object"
       ? {
@@ -145,6 +240,10 @@ function toCandidate(p: Record<string, unknown>): TriCandidate {
           image: (p.og as { image?: string | null }).image ?? null,
         }
       : null;
+  const signals = extractSignals(p);
+  const latestReviewDays = signals.latestReviewAt
+    ? Math.floor((now.getTime() - signals.latestReviewAt.getTime()) / 86_400_000)
+    : null;
   return {
     id: String(p._id),
     name: String(p.name ?? ""),
@@ -165,7 +264,10 @@ function toCandidate(p: Record<string, unknown>): TriCandidate {
     snooze_until: p.snooze_until
       ? new Date(p.snooze_until as string).toISOString()
       : null,
-    gmaps_rank: extractRank(p),
+    gmaps_rank: signals.rank,
+    latest_review_days: latestReviewDays,
+    profile_gaps: signals.gaps,
+    is_mobile_phone: mobilePhoneBoost(signals.phoneE164) > 1,
   };
 }
 
