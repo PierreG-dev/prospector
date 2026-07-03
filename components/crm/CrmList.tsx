@@ -26,6 +26,7 @@ type Row = {
   category: string | null;
   city: string | null;
   trade: string | null;
+  lifecycle: string;
   has_website: boolean;
   phone: string | null;
   score: number;
@@ -49,17 +50,19 @@ export function CrmList() {
   const [lifecycle, setLifecycle] = useState<"qualified" | "rejected">(
     "qualified"
   );
+  const [includeInbox, setIncludeInbox] = useState(false);
   const [reloadKey, setReloadKey] = useState(0);
 
   const params = useMemo(() => {
     const p = new URLSearchParams();
     p.set("lifecycle", lifecycle);
+    if (includeInbox && lifecycle === "qualified") p.set("includeInbox", "1");
     if (q) p.set("q", q);
     if (trade) p.set("trade", trade);
     if (city) p.set("city", city);
     if (pipeline && lifecycle === "qualified") p.set("pipeline", pipeline);
     return p.toString();
-  }, [q, trade, city, pipeline, lifecycle]);
+  }, [q, trade, city, pipeline, lifecycle, includeInbox]);
 
   useEffect(() => {
     let alive = true;
@@ -147,6 +150,17 @@ export function CrmList() {
               placeholder="Ville"
               options={facets.cities.map((c) => ({ value: c, label: c }))}
             />
+            {lifecycle === "qualified" && (
+              <label className="inline-flex items-center gap-2 text-xs text-textMuted cursor-pointer select-none">
+                <input
+                  type="checkbox"
+                  checked={includeInbox}
+                  onChange={(e) => setIncludeInbox(e.target.checked)}
+                  className="rounded border-mid text-accent focus:ring-accent/30"
+                />
+                Inclure non triés
+              </label>
+            )}
             {(q || trade || city || pipeline) && (
               <button
                 onClick={() => {
@@ -236,14 +250,19 @@ export function CrmList() {
                     </div>
                   </div>
 
-                  {lifecycle === "qualified" && (
-                    <PipelinePill
-                      status={
-                        p.pipeline_status as
-                          | Parameters<typeof PipelinePill>[0]["status"]
-                      }
-                    />
-                  )}
+                  {lifecycle === "qualified" &&
+                    (p.lifecycle === "qualified" ? (
+                      <PipelinePill
+                        status={
+                          p.pipeline_status as
+                            | Parameters<typeof PipelinePill>[0]["status"]
+                        }
+                      />
+                    ) : (
+                      <Pill tone="neutral">
+                        {p.lifecycle === "snoozed" ? "snoozé" : "non trié"}
+                      </Pill>
+                    ))}
                   <ChevronRight className="h-4 w-4 text-textMuted/60 group-hover:text-accent transition" />
                 </Link>
 

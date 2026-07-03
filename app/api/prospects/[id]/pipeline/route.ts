@@ -28,9 +28,9 @@ export async function POST(
   if (!prev) {
     return NextResponse.json({ error: "Prospect introuvable" }, { status: 404 });
   }
-  if (prev.lifecycle !== "qualified") {
+  if (prev.lifecycle === "rejected") {
     return NextResponse.json(
-      { error: "Le prospect doit être qualifié pour avoir un pipeline_status." },
+      { error: "Prospect archivé — restaure-le avant de changer son statut." },
       { status: 400 }
     );
   }
@@ -43,6 +43,13 @@ export async function POST(
     pipeline_status: to,
     last_status_at: now,
   };
+
+  // Promotion auto : un prospect en inbox/snoozed qui reçoit un statut pipeline
+  // passe en qualified (sinon il resterait dans la file de tri).
+  if (prev.lifecycle !== "qualified") {
+    set.lifecycle = "qualified";
+    set.snooze_until = null;
+  }
 
   // Démarrage moteur de relance au passage à `contacte`
   if (to === "contacte" && from !== "contacte") {

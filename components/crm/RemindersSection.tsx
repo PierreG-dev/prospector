@@ -47,6 +47,7 @@ export function RemindersSection({
     d.setDate(d.getDate() + 3);
     return toLocalDateInput(d);
   });
+  const [time, setTime] = useState("");
 
   const load = async () => {
     setLoading(true);
@@ -66,7 +67,8 @@ export function RemindersSection({
 
   const create = async () => {
     if (!date) return;
-    const dt = new Date(date + "T09:00:00");
+    const timePart = /^\d{2}:\d{2}$/.test(time) ? time : "09:00";
+    const dt = new Date(`${date}T${timePart}:00`);
     await fetch("/api/reminders", {
       method: "POST",
       headers: { "content-type": "application/json" },
@@ -77,6 +79,7 @@ export function RemindersSection({
       }),
     });
     setLabel("");
+    setTime("");
     setAdding(false);
     await load();
     onChange?.();
@@ -126,13 +129,23 @@ export function RemindersSection({
             placeholder='Label (ex : "Relancer après devis")'
             className="w-full rounded-xl border border-mid bg-white px-3 py-2 text-sm focus:border-accent focus:ring-2 focus:ring-accent/20 focus:outline-none"
           />
-          <input
-            type="date"
-            value={date}
-            min={toLocalDateInput(new Date())}
-            onChange={(e) => setDate(e.target.value)}
-            className="w-full rounded-xl border border-mid bg-white px-3 py-2 text-sm focus:border-accent focus:ring-2 focus:ring-accent/20 focus:outline-none"
-          />
+          <div className="flex gap-2">
+            <input
+              type="date"
+              value={date}
+              min={toLocalDateInput(new Date())}
+              onChange={(e) => setDate(e.target.value)}
+              className="flex-1 rounded-xl border border-mid bg-white px-3 py-2 text-sm focus:border-accent focus:ring-2 focus:ring-accent/20 focus:outline-none"
+            />
+            <input
+              type="time"
+              value={time}
+              onChange={(e) => setTime(e.target.value)}
+              placeholder="09:00"
+              title="Heure (optionnelle, défaut 09:00)"
+              className="w-28 rounded-xl border border-mid bg-white px-3 py-2 text-sm focus:border-accent focus:ring-2 focus:ring-accent/20 focus:outline-none"
+            />
+          </div>
           <div className="flex justify-end gap-2">
             <Button
               variant="ghost"

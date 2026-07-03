@@ -25,23 +25,41 @@ export type TriCandidate = {
   og: { title: string | null; description: string | null; image: string | null } | null;
   lifecycle: "inbox" | "snoozed";
   snooze_until: string | null;
+  gmaps_rank: number | null;
 };
 
 /**
- * Combine score (P de conversion 0-100) et fenêtre d'appel optimale → poids final.
+ * Boost "invisibilité Google" : plus la fiche est loin dans les résultats Maps,
+ * plus elle a besoin d'un site → poids relevé. Signal doux qui ne renverse pas
+ * un vrai gap de score (pas-de-site score 73 vs vrai-site score 20 reste dominé).
+ *
+ * rank=1  → 0.75  |  rank=5  → 1.0  |  rank=15 → 1.6  |  rank≥20 → 1.75 (plafond)
+ * rank null/absent → 1.0 (neutre : ancien import ou actor sans champ rank)
+ */
+export function invisibilityBoost(rank: number | null): number {
+  if (rank == null || rank < 1) return 1;
+  const raw = 1 + (rank - 5) * 0.06;
+  return Math.max(0.75, Math.min(1.75, raw));
+}
+
+/**
+ * Combine score (P de conversion 0-100), fenêtre d'appel optimale et
+ * boost d'invisibilité Google → poids final.
  * - score = 0 (ex. pas de tel) → poids 0 : exclu du tirage.
  * - weightAt rend 0 pour les zones `avoid` → ces prospects ne participent pas au tirage.
  * - trade null → POIDS_UNKNOWN (0.5), jamais 0 : pas de famine pour les métiers inconnus.
+ * - rank haut (fiche invisible sur Google) → boost jusqu'à ×1.75.
  * - Si tous les candidats ont un poids 0, rouletteIndex fait un tirage aléatoire uniforme.
  */
 function combinedWeight(
   score: number,
   trade: TradeBucket | null,
-  now: Date
+  now: Date,
+  rank: number | null = null
 ): number {
   const base = Math.max(score, 0);
   const w = weightAt(trade, now);
-  return base * w;
+  return base * w * invisibilityBoost(rank);
 }
 
 /**
@@ -70,7 +88,7 @@ export async function pickNext(
       name: 1, category: 1, city: 1, address: 1, phone: 1,
       website_url: 1, gmaps_url: 1, gmaps_rating: 1, gmaps_reviews: 1,
       has_website: 1, keys: 1, trade: 1, times_seen: 1, og: 1,
-      lifecycle: 1, snooze_until: 1,
+      lifecycle: 1, snooze_until: 1, "raw.rank": 1,
     })
     .lean();
 
@@ -79,7 +97,12 @@ export async function pickNext(
   // Score calculé à la volée (scoreV2) — non persisté, reflète la logique actuelle.
   const scores = candidates.map((c) => liveScore(c));
   let weights = candidates.map((c, i) =>
-    combinedWeight(scores[i]!, (c.trade ?? null) as TradeBucket | null, now)
+    combinedWeight(
+      scores[i]!,
+      (c.trade ?? null) as TradeBucket | null,
+      now,
+      extractRank(c)
+    )
   );
   // Si tous les poids sont à 0 (ex. tous en zone avoid), on retombe sur score seul.
   if (weights.every((w) => w <= 0)) {
@@ -91,6 +114,12 @@ export async function pickNext(
   const pick = candidates[idx]!;
 
   return toCandidate(pick);
+}
+
+function extractRank(p: Record<string, unknown>): number | null {
+  const raw = p.raw as { rank?: unknown } | null | undefined;
+  const r = raw?.rank;
+  return typeof r === "number" && Number.isFinite(r) ? r : null;
 }
 
 function liveScore(p: Record<string, unknown>): number {
@@ -136,6 +165,7 @@ function toCandidate(p: Record<string, unknown>): TriCandidate {
     snooze_until: p.snooze_until
       ? new Date(p.snooze_until as string).toISOString()
       : null,
+    gmaps_rank: extractRank(p),
   };
 }
 

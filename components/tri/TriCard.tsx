@@ -165,6 +165,14 @@ export function TriCard({
             {candidate.times_seen > 1 && (
               <Pill tone="neutral">vu {candidate.times_seen}×</Pill>
             )}
+            {candidate.gmaps_rank != null && (
+              <span>
+                Google{" "}
+                <span className="font-mono text-warmDark dark:text-cream">
+                  #{candidate.gmaps_rank}
+                </span>
+              </span>
+            )}
           </div>
 
           {/* Boutons externes (sans avancer la file) */}

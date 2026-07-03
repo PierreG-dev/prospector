@@ -12,6 +12,7 @@ export async function GET(req: Request) {
   const url = new URL(req.url);
 
   const lifecycle = url.searchParams.get("lifecycle") ?? "qualified";
+  const includeInbox = url.searchParams.get("includeInbox") === "1";
   const trade = url.searchParams.get("trade");
   const city = url.searchParams.get("city");
   const pipeline = url.searchParams.get("pipeline");
@@ -22,7 +23,10 @@ export async function GET(req: Request) {
   );
   const offset = Math.max(Number(url.searchParams.get("offset") ?? 0) || 0, 0);
 
-  const filter: Record<string, unknown> = { lifecycle };
+  const filter: Record<string, unknown> =
+    includeInbox && lifecycle === "qualified"
+      ? { lifecycle: { $in: ["qualified", "inbox", "snoozed"] } }
+      : { lifecycle };
   if (trade) filter.trade = trade;
   if (city) filter.city = city;
   if (pipeline) filter.pipeline_status = pipeline;
@@ -39,6 +43,7 @@ export async function GET(req: Request) {
         category: 1,
         city: 1,
         trade: 1,
+        lifecycle: 1,
         has_website: 1,
         phone: 1,
         website_url: 1,
@@ -57,8 +62,18 @@ export async function GET(req: Request) {
       .skip(offset)
       .lean(),
     Prospect.countDocuments(filter),
-    Prospect.distinct("trade", { lifecycle, trade: { $ne: null } }),
-    Prospect.distinct("city", { lifecycle, city: { $ne: null } }),
+    Prospect.distinct("trade", {
+      ...(includeInbox && lifecycle === "qualified"
+        ? { lifecycle: { $in: ["qualified", "inbox", "snoozed"] } }
+        : { lifecycle }),
+      trade: { $ne: null },
+    }),
+    Prospect.distinct("city", {
+      ...(includeInbox && lifecycle === "qualified"
+        ? { lifecycle: { $in: ["qualified", "inbox", "snoozed"] } }
+        : { lifecycle }),
+      city: { $ne: null },
+    }),
   ]);
 
   return NextResponse.json({
