@@ -24,7 +24,7 @@ type UndoSnapshot = {
 type PostActionState = {
   prospectId: string;
   prospectName: string;
-  action: "qualify" | "snooze";
+  action: "qualify";
 };
 
 type SessionStats = { qualified: number; rejected: number; snoozed: number };
@@ -180,8 +180,14 @@ export function TriClient() {
         const dir: Direction =
           action === "qualify" ? "right" : action === "reject" ? "left" : "up";
         await advance(dir);
-        if (action === "qualify" || action === "snooze") {
+        if (action === "qualify") {
           setPostAction({ prospectId, prospectName, action });
+        } else if (action === "snooze") {
+          const when = opts?.snooze_until;
+          const label = when
+            ? when.toLocaleDateString("fr-FR", { day: "numeric", month: "short" })
+            : null;
+          showToast(label ? `Snoozé jusqu'au ${label}` : "Snoozé", "neutral");
         } else {
           showToast("Pas intéressé", "danger");
         }
@@ -323,7 +329,7 @@ export function TriClient() {
           action={postAction.action}
           onClose={(note) => {
             if (note) showToast("Note enregistrée", "success");
-            else showToast(postAction.action === "qualify" ? "Intéressé ✓" : "Rappel programmé", postAction.action === "qualify" ? "success" : "neutral");
+            else showToast("Intéressé ✓", "success");
             setPostAction(null);
           }}
         />
@@ -427,7 +433,7 @@ function PostActionPanel({
 }: {
   prospectId: string;
   prospectName: string;
-  action: "qualify" | "snooze";
+  action: "qualify";
   onClose: (noteSaved: boolean) => void;
 }) {
   const [note, setNote] = useState("");
