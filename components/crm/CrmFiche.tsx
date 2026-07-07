@@ -10,6 +10,7 @@ import {
   GlobeLock,
   MapPin,
   Phone,
+  Archive,
   RotateCcw,
   Star,
   Loader2,
@@ -55,6 +56,7 @@ export function CrmFiche({ id }: { id: string }) {
   const [data, setData] = useState<Fiche | null>(null);
   const [loading, setLoading] = useState(true);
   const [resetting, setResetting] = useState(false);
+  const [archiving, setArchiving] = useState(false);
   const [toast, setToast] = useState<{
     open: boolean;
     text: string;
@@ -110,6 +112,26 @@ export function CrmFiche({ id }: { id: string }) {
     }
     showToast("Note ajoutée", "success");
     await load();
+  };
+
+  const onArchive = async () => {
+    const ok = window.confirm(
+      "Archiver ce prospect ? Il sera marqué comme rejeté et sortira de la file de tri. Réversible via 'Restaurer'."
+    );
+    if (!ok) return;
+    setArchiving(true);
+    const r = await fetch(`/api/prospects/${id}/decide`, {
+      method: "POST",
+      headers: { "content-type": "application/json" },
+      body: JSON.stringify({ action: "reject", note: "Archivé depuis la fiche" }),
+    });
+    setArchiving(false);
+    if (!r.ok) {
+      showToast("Erreur", "danger");
+      return;
+    }
+    showToast("Prospect archivé", "success");
+    router.push("/crm");
   };
 
   const onReset = async () => {
@@ -341,8 +363,27 @@ export function CrmFiche({ id }: { id: string }) {
           <Card>
             <CardBody>
               <h3 className="text-[11px] uppercase tracking-wider text-textMuted dark:text-nightMuted mb-3">
-                Zone de danger
+                Actions
               </h3>
+              {data.lifecycle !== "rejected" && (
+                <>
+                  <button
+                    onClick={onArchive}
+                    disabled={archiving}
+                    className="inline-flex items-center gap-2 rounded-md border border-mid dark:border-nightBorder text-warmDark dark:text-cream px-3 py-1.5 text-xs hover:border-accent hover:text-accent dark:hover:text-accent transition disabled:opacity-50 disabled:cursor-not-allowed"
+                  >
+                    {archiving ? (
+                      <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                    ) : (
+                      <Archive className="h-3.5 w-3.5" />
+                    )}
+                    Archiver le prospect
+                  </button>
+                  <p className="mt-2 mb-4 text-[11px] text-textMuted dark:text-nightMuted leading-relaxed">
+                    Marque le prospect comme rejeté. Notes et historique conservés.
+                  </p>
+                </>
+              )}
               <button
                 onClick={onReset}
                 disabled={resetting}
