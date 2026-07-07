@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { useRouter } from "next/navigation";
 import Link from "next/link";
 import {
   ArrowLeft,
@@ -9,6 +10,7 @@ import {
   GlobeLock,
   MapPin,
   Phone,
+  RotateCcw,
   Star,
   Loader2,
 } from "lucide-react";
@@ -49,8 +51,10 @@ type Fiche = {
 };
 
 export function CrmFiche({ id }: { id: string }) {
+  const router = useRouter();
   const [data, setData] = useState<Fiche | null>(null);
   const [loading, setLoading] = useState(true);
+  const [resetting, setResetting] = useState(false);
   const [toast, setToast] = useState<{
     open: boolean;
     text: string;
@@ -106,6 +110,22 @@ export function CrmFiche({ id }: { id: string }) {
     }
     showToast("Note ajoutée", "success");
     await load();
+  };
+
+  const onReset = async () => {
+    const ok = window.confirm(
+      "Reset ce prospect ? Il retourne dans la file de tri, toutes les notes, l'historique et les rappels sont supprimés. Action irréversible."
+    );
+    if (!ok) return;
+    setResetting(true);
+    const r = await fetch(`/api/prospects/${id}/reset`, { method: "POST" });
+    setResetting(false);
+    if (!r.ok) {
+      showToast("Erreur", "danger");
+      return;
+    }
+    showToast("Prospect remis dans la file", "success");
+    router.push("/crm");
   };
 
   if (loading) {
@@ -315,6 +335,30 @@ export function CrmFiche({ id }: { id: string }) {
                   <dd className="font-mono text-warmDark">{data.times_seen}×</dd>
                 </div>
               </dl>
+            </CardBody>
+          </Card>
+
+          <Card>
+            <CardBody>
+              <h3 className="text-[11px] uppercase tracking-wider text-textMuted mb-3">
+                Zone de danger
+              </h3>
+              <button
+                onClick={onReset}
+                disabled={resetting}
+                className="inline-flex items-center gap-2 rounded-md border border-reject/40 text-reject px-3 py-1.5 text-xs hover:bg-reject/10 transition disabled:opacity-50 disabled:cursor-not-allowed"
+              >
+                {resetting ? (
+                  <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                ) : (
+                  <RotateCcw className="h-3.5 w-3.5" />
+                )}
+                Reset le prospect
+              </button>
+              <p className="mt-2 text-[11px] text-textMuted leading-relaxed">
+                Retour dans la file de tri. Notes, historique, pipeline et
+                rappels supprimés.
+              </p>
             </CardBody>
           </Card>
         </div>
