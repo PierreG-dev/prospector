@@ -42,13 +42,13 @@ export function NotesPanel({
 
   return (
     <div className="space-y-4">
-      <div className="rounded-2xl border border-mid bg-cream/40 p-3">
+      <div className="rounded-2xl border border-mid dark:border-nightBorder bg-cream/40 dark:bg-nightBorder/20 p-3">
         <textarea
           value={text}
           onChange={(e) => setText(e.target.value)}
           placeholder="Une nouvelle note (accroche, objection, retour d'appel…)"
           rows={3}
-          className="w-full bg-transparent text-sm placeholder:text-textMuted/60 focus:outline-none resize-none"
+          className="w-full bg-transparent text-sm dark:text-cream placeholder:text-textMuted/60 dark:placeholder:text-nightMuted/60 focus:outline-none resize-none"
         />
         <div className="flex justify-end mt-1">
           <Button
@@ -69,7 +69,7 @@ export function NotesPanel({
       </div>
 
       {sorted.length === 0 ? (
-        <p className="text-sm text-textMuted flex items-center gap-2">
+        <p className="text-sm text-textMuted dark:text-nightMuted flex items-center gap-2">
           <NotebookPen className="h-4 w-4" /> Aucune note.
         </p>
       ) : (
@@ -77,10 +77,10 @@ export function NotesPanel({
           {sorted.map((n, i) => (
             <li
               key={i}
-              className="rounded-xl border border-mid bg-white px-4 py-3 shadow-warm-sm"
+              className="rounded-xl border border-mid dark:border-nightBorder bg-white dark:bg-nightBorder/30 px-4 py-3 shadow-warm-sm"
             >
-              <p className="text-sm whitespace-pre-wrap">{n.body}</p>
-              <p className="mt-1 text-[11px] text-textMuted">
+              <p className="text-sm whitespace-pre-wrap dark:text-cream">{n.body}</p>
+              <p className="mt-1 text-[11px] text-textMuted dark:text-nightMuted">
                 {fmt(n.created_at)}
               </p>
             </li>

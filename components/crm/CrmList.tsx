@@ -97,7 +97,7 @@ export function CrmList() {
   return (
     <div className="space-y-5">
       {/* Onglets Qualifiés / Rejetés */}
-      <div className="inline-flex rounded-full border border-mid bg-white p-1 gap-0.5">
+      <div className="inline-flex rounded-full border border-mid dark:border-nightBorder bg-white dark:bg-nightSurface p-1 gap-0.5">
         {(["qualified", "rejected"] as const).map((l) => (
           <button
             key={l}
@@ -105,8 +105,8 @@ export function CrmList() {
             className={cn(
               "rounded-full px-4 py-1.5 text-xs font-medium transition",
               lifecycle === l
-                ? "bg-mid text-warmDark"
-                : "text-textMuted hover:text-warmDark"
+                ? "bg-mid text-warmDark dark:bg-nightBorder dark:text-cream"
+                : "text-textMuted dark:text-nightMuted hover:text-warmDark dark:hover:text-cream"
             )}
           >
             {l === "qualified" ? "Retenus" : "Archivés"}
@@ -119,12 +119,12 @@ export function CrmList() {
         <CardBody className="py-4">
           <div className="flex flex-wrap items-center gap-3">
             <div className="relative flex-1 min-w-[240px]">
-              <Search className="h-4 w-4 absolute left-3 top-1/2 -translate-y-1/2 text-textMuted" />
+              <Search className="h-4 w-4 absolute left-3 top-1/2 -translate-y-1/2 text-textMuted dark:text-nightMuted" />
               <input
                 value={q}
                 onChange={(e) => setQ(e.target.value)}
                 placeholder="Rechercher par nom…"
-                className="w-full rounded-full border border-mid bg-white pl-9 pr-4 py-2 text-sm focus:border-accent focus:ring-2 focus:ring-accent/20 focus:outline-none"
+                className="w-full rounded-full border border-mid dark:border-nightBorder bg-white dark:bg-nightBorder/30 dark:text-cream placeholder:text-textMuted/60 dark:placeholder:text-nightMuted/60 pl-9 pr-4 py-2 text-sm focus:border-accent focus:ring-2 focus:ring-accent/20 focus:outline-none"
               />
             </div>
             {lifecycle === "qualified" && (
@@ -151,12 +151,12 @@ export function CrmList() {
               options={facets.cities.map((c) => ({ value: c, label: c }))}
             />
             {lifecycle === "qualified" && (
-              <label className="inline-flex items-center gap-2 text-xs text-textMuted cursor-pointer select-none">
+              <label className="inline-flex items-center gap-2 text-xs text-textMuted dark:text-nightMuted cursor-pointer select-none">
                 <input
                   type="checkbox"
                   checked={includeInbox}
                   onChange={(e) => setIncludeInbox(e.target.checked)}
-                  className="rounded border-mid text-accent focus:ring-accent/30"
+                  className="rounded border-mid dark:border-nightBorder dark:bg-nightBorder/40 text-accent focus:ring-accent/30"
                 />
                 Inclure non triés
               </label>
@@ -169,12 +169,12 @@ export function CrmList() {
                   setCity("");
                   setPipeline("");
                 }}
-                className="text-xs text-textMuted hover:text-warmDark transition"
+                className="text-xs text-textMuted dark:text-nightMuted hover:text-warmDark dark:hover:text-cream transition"
               >
                 Effacer
               </button>
             )}
-            <div className="ml-auto text-xs text-textMuted flex items-center gap-1">
+            <div className="ml-auto text-xs text-textMuted dark:text-nightMuted flex items-center gap-1">
               <Filter className="h-3 w-3" />
               {total} prospect{total > 1 ? "s" : ""}
             </div>
@@ -185,7 +185,7 @@ export function CrmList() {
       {/* Liste */}
       {loading ? (
         <Card>
-          <CardBody className="py-10 flex justify-center text-textMuted">
+          <CardBody className="py-10 flex justify-center text-textMuted dark:text-nightMuted">
             <Loader2 className="h-5 w-5 animate-spin" />
           </CardBody>
         </Card>
@@ -205,20 +205,20 @@ export function CrmList() {
         />
       ) : (
         <Card>
-          <ul className="divide-y divide-mid">
+          <ul className="divide-y divide-mid dark:divide-nightBorder">
             {items.map((p) => (
               <li key={p._id} className="flex items-stretch">
                 <Link
                   href={`/crm/${p._id}`}
                   className={cn(
-                    "flex-1 flex items-center gap-4 px-5 py-3.5 hover:bg-cream/60 transition group"
+                    "flex-1 flex items-center gap-4 px-5 py-3.5 hover:bg-cream/60 dark:hover:bg-nightBorder/30 transition group"
                   )}
                 >
                   <div className="flex-1 min-w-0">
                     <div className="flex items-center gap-2 flex-wrap">
-                      <span className="font-medium truncate">{p.name}</span>
+                      <span className="font-medium truncate dark:text-cream">{p.name}</span>
                       {p.trade && (
-                        <span className="text-xs text-textMuted">
+                        <span className="text-xs text-textMuted dark:text-nightMuted">
                           · {p.trade}
                         </span>
                       )}
@@ -231,7 +231,7 @@ export function CrmList() {
                           </Pill>
                         )}
                     </div>
-                    <div className="mt-1 flex items-center gap-3 text-xs text-textMuted">
+                    <div className="mt-1 flex items-center gap-3 text-xs text-textMuted dark:text-nightMuted">
                       {p.city && <span>{p.city}</span>}
                       {p.has_website ? (
                         <span className="inline-flex items-center gap-1">
@@ -263,7 +263,7 @@ export function CrmList() {
                         {p.lifecycle === "snoozed" ? "snoozé" : "non trié"}
                       </Pill>
                     ))}
-                  <ChevronRight className="h-4 w-4 text-textMuted/60 group-hover:text-accent transition" />
+                  <ChevronRight className="h-4 w-4 text-textMuted/60 dark:text-nightMuted/60 group-hover:text-accent transition" />
                 </Link>
 
                 {lifecycle === "rejected" && (
@@ -272,7 +272,7 @@ export function CrmList() {
                       e.preventDefault();
                       restore(p._id);
                     }}
-                    className="px-4 text-xs text-accent2 hover:bg-accent2/10 border-l border-mid transition inline-flex items-center gap-1.5"
+                    className="px-4 text-xs text-accent2 hover:bg-accent2/10 border-l border-mid dark:border-nightBorder transition inline-flex items-center gap-1.5"
                     title="Restaurer dans la file de tri"
                   >
                     <RotateCcw className="h-3.5 w-3.5" />
@@ -304,13 +304,13 @@ function Select({
       value={value}
       onChange={(e) => onChange(e.target.value)}
       className={cn(
-        "rounded-full border border-mid bg-white px-3 py-2 text-sm focus:border-accent focus:ring-2 focus:ring-accent/20 focus:outline-none",
-        !value && "text-textMuted"
+        "rounded-full border border-mid dark:border-nightBorder bg-white dark:bg-nightBorder/30 dark:text-cream px-3 py-2 text-sm focus:border-accent focus:ring-2 focus:ring-accent/20 focus:outline-none",
+        !value && "text-textMuted dark:text-nightMuted"
       )}
     >
-      <option value="">{placeholder}</option>
+      <option value="" className="dark:bg-nightSurface dark:text-nightMuted">{placeholder}</option>
       {options.map((o) => (
-        <option key={o.value} value={o.value} className="text-warmDark">
+        <option key={o.value} value={o.value} className="text-warmDark dark:bg-nightSurface dark:text-cream">
           {o.label}
         </option>
       ))}

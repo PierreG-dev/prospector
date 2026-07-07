@@ -105,7 +105,7 @@ export function RemindersSection({
     <div className="space-y-3">
       {!adding && (
         <div className="flex items-center justify-between">
-          <p className="text-xs text-textMuted">
+          <p className="text-xs text-textMuted dark:text-nightMuted">
             {items.length === 0
               ? "Aucun rappel ouvert."
               : `${items.length} rappel${items.length > 1 ? "s" : ""} ouvert${items.length > 1 ? "s" : ""}`}
@@ -122,12 +122,12 @@ export function RemindersSection({
       )}
 
       {adding && (
-        <div className="rounded-2xl border border-mid bg-cream/40 p-3 space-y-2">
+        <div className="rounded-2xl border border-mid dark:border-nightBorder bg-cream/40 dark:bg-nightBorder/20 p-3 space-y-2">
           <input
             value={label}
             onChange={(e) => setLabel(e.target.value)}
             placeholder='Label (ex : "Relancer après devis")'
-            className="w-full rounded-xl border border-mid bg-white px-3 py-2 text-sm focus:border-accent focus:ring-2 focus:ring-accent/20 focus:outline-none"
+            className="w-full rounded-xl border border-mid dark:border-nightBorder bg-white dark:bg-nightBorder/30 dark:text-cream placeholder:text-textMuted/60 dark:placeholder:text-nightMuted/60 px-3 py-2 text-sm focus:border-accent focus:ring-2 focus:ring-accent/20 focus:outline-none"
           />
           <div className="flex gap-2">
             <input
@@ -135,7 +135,7 @@ export function RemindersSection({
               value={date}
               min={toLocalDateInput(new Date())}
               onChange={(e) => setDate(e.target.value)}
-              className="flex-1 rounded-xl border border-mid bg-white px-3 py-2 text-sm focus:border-accent focus:ring-2 focus:ring-accent/20 focus:outline-none"
+              className="flex-1 rounded-xl border border-mid dark:border-nightBorder bg-white dark:bg-nightBorder/30 dark:text-cream dark:[color-scheme:dark] px-3 py-2 text-sm focus:border-accent focus:ring-2 focus:ring-accent/20 focus:outline-none"
             />
             <input
               type="time"
@@ -143,7 +143,7 @@ export function RemindersSection({
               onChange={(e) => setTime(e.target.value)}
               placeholder="09:00"
               title="Heure (optionnelle, défaut 09:00)"
-              className="w-28 rounded-xl border border-mid bg-white px-3 py-2 text-sm focus:border-accent focus:ring-2 focus:ring-accent/20 focus:outline-none"
+              className="w-28 rounded-xl border border-mid dark:border-nightBorder bg-white dark:bg-nightBorder/30 dark:text-cream dark:[color-scheme:dark] px-3 py-2 text-sm focus:border-accent focus:ring-2 focus:ring-accent/20 focus:outline-none"
             />
           </div>
           <div className="flex justify-end gap-2">
@@ -165,7 +165,7 @@ export function RemindersSection({
       )}
 
       {loading ? (
-        <div className="flex justify-center py-4 text-textMuted">
+        <div className="flex justify-center py-4 text-textMuted dark:text-nightMuted">
           <Loader2 className="h-4 w-4 animate-spin" />
         </div>
       ) : items.length === 0 ? null : (
@@ -174,20 +174,20 @@ export function RemindersSection({
             <li
               key={r._id}
               className={cn(
-                "rounded-xl border border-mid bg-white px-3 py-2.5 flex items-center gap-3",
+                "rounded-xl border border-mid dark:border-nightBorder bg-white dark:bg-nightBorder/30 px-3 py-2.5 flex items-center gap-3",
                 new Date(r.due_at) < new Date() &&
-                  "border-reject/40 bg-reject/[0.04]"
+                  "border-reject/40 dark:border-reject/50 bg-reject/[0.04] dark:bg-reject/[0.12]"
               )}
             >
-              <Clock className="h-3.5 w-3.5 text-textMuted shrink-0" />
+              <Clock className="h-3.5 w-3.5 text-textMuted dark:text-nightMuted shrink-0" />
               <div className="flex-1 min-w-0">
-                <p className="text-sm">
+                <p className="text-sm dark:text-cream">
                   {r.label ??
                     (r.kind === "relance"
                       ? `Relance ${r.relance_index}/3`
                       : "Rappel")}
                 </p>
-                <div className="flex items-center gap-2 mt-0.5 text-[11px] text-textMuted">
+                <div className="flex items-center gap-2 mt-0.5 text-[11px] text-textMuted dark:text-nightMuted">
                   <span>{fmtDue(r.due_at)}</span>
                   {r.kind === "relance" && (
                     <Pill tone="warn">
@@ -206,7 +206,7 @@ export function RemindersSection({
               <button
                 onClick={() => remove(r._id)}
                 title="Supprimer"
-                className="text-textMuted/60 hover:text-reject p-1 transition"
+                className="text-textMuted/60 dark:text-nightMuted/60 hover:text-reject dark:hover:text-reject p-1 transition"
               >
                 <Trash2 className="h-3 w-3" />
               </button>

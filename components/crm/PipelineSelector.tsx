@@ -26,7 +26,7 @@ export function PipelineSelector({
   };
 
   return (
-    <div className="inline-flex rounded-full border border-mid bg-white p-1 gap-0.5 flex-wrap">
+    <div className="inline-flex rounded-full border border-mid dark:border-nightBorder bg-white dark:bg-nightSurface p-1 gap-0.5 flex-wrap">
       {PIPELINE_ORDER.map((s) => {
         const active = value === s;
         const tone = PIPELINE_TONE[s];
@@ -39,7 +39,7 @@ export function PipelineSelector({
                 ? "bg-snooze text-white"
                 : tone === "danger"
                   ? "bg-reject text-white"
-                  : "bg-mid text-warmDark";
+                  : "bg-mid text-warmDark dark:bg-nightBorder dark:text-cream";
         return (
           <button
             key={s}
@@ -47,7 +47,7 @@ export function PipelineSelector({
             disabled={busy !== null}
             className={cn(
               "inline-flex items-center gap-1.5 rounded-full px-3 py-1.5 text-xs font-medium transition",
-              active ? activeClass : "text-warmDark hover:bg-mid/60",
+              active ? activeClass : "text-warmDark dark:text-cream hover:bg-mid/60 dark:hover:bg-nightBorder/50",
               busy && "opacity-70"
             )}
           >

@@ -130,7 +130,7 @@ export function CrmFiche({ id }: { id: string }) {
 
   if (loading) {
     return (
-      <div className="flex items-center justify-center py-16 text-textMuted">
+      <div className="flex items-center justify-center py-16 text-textMuted dark:text-nightMuted">
         <Loader2 className="h-6 w-6 animate-spin" />
       </div>
     );
@@ -139,7 +139,7 @@ export function CrmFiche({ id }: { id: string }) {
   if (!data) {
     return (
       <Card>
-        <CardBody className="py-12 text-center text-sm text-textMuted">
+        <CardBody className="py-12 text-center text-sm text-textMuted dark:text-nightMuted">
           Prospect introuvable.{" "}
           <Link href="/crm" className="text-accent">
             Retour à la liste
@@ -154,7 +154,7 @@ export function CrmFiche({ id }: { id: string }) {
       <div>
         <Link
           href="/crm"
-          className="inline-flex items-center gap-1 text-xs text-textMuted hover:text-accent transition mb-3"
+          className="inline-flex items-center gap-1 text-xs text-textMuted dark:text-nightMuted hover:text-accent transition mb-3"
         >
           <ArrowLeft className="h-3 w-3" /> Retour
         </Link>
@@ -167,15 +167,15 @@ export function CrmFiche({ id }: { id: string }) {
             <CardBody>
               <div className="flex items-start justify-between gap-4 flex-wrap">
                 <div className="min-w-0">
-                  <h2 className="text-2xl font-semibold leading-tight">
+                  <h2 className="text-2xl font-semibold leading-tight dark:text-cream">
                     {data.name}
                   </h2>
-                  <p className="mt-1 text-sm text-textMuted">
+                  <p className="mt-1 text-sm text-textMuted dark:text-nightMuted">
                     {data.category ?? "—"}
                     {data.city && ` · ${data.city}`}
                   </p>
                   {data.address && (
-                    <p className="text-xs text-textMuted mt-0.5">
+                    <p className="text-xs text-textMuted dark:text-nightMuted mt-0.5">
                       {data.address}
                     </p>
                   )}
@@ -201,7 +201,7 @@ export function CrmFiche({ id }: { id: string }) {
                 {data.phone && (
                   <a
                     href={`tel:${data.phone.replace(/[^\d+]/g, "")}`}
-                    className="inline-flex items-center gap-2 rounded-full border border-mid px-3 py-1.5 hover:border-accent hover:text-accent transition"
+                    className="inline-flex items-center gap-2 rounded-full border border-mid dark:border-nightBorder dark:text-cream px-3 py-1.5 hover:border-accent hover:text-accent dark:hover:text-accent transition"
                   >
                     <Phone className="h-3.5 w-3.5" />
                     <span className="font-mono text-xs">{data.phone}</span>
@@ -212,7 +212,7 @@ export function CrmFiche({ id }: { id: string }) {
                     href={data.website_url}
                     target="_blank"
                     rel="noreferrer"
-                    className="inline-flex items-center gap-2 rounded-full border border-mid px-3 py-1.5 hover:border-accent hover:text-accent transition"
+                    className="inline-flex items-center gap-2 rounded-full border border-mid dark:border-nightBorder dark:text-cream px-3 py-1.5 hover:border-accent hover:text-accent dark:hover:text-accent transition"
                   >
                     <Globe2 className="h-3.5 w-3.5" />
                     <span className="text-xs truncate max-w-[220px]">
@@ -226,7 +226,7 @@ export function CrmFiche({ id }: { id: string }) {
                     href={data.gmaps_url}
                     target="_blank"
                     rel="noreferrer"
-                    className="inline-flex items-center gap-2 rounded-full border border-mid px-3 py-1.5 hover:border-accent hover:text-accent transition"
+                    className="inline-flex items-center gap-2 rounded-full border border-mid dark:border-nightBorder dark:text-cream px-3 py-1.5 hover:border-accent hover:text-accent dark:hover:text-accent transition"
                   >
                     <MapPin className="h-3.5 w-3.5" />
                     <span className="text-xs">Google Maps</span>
@@ -235,13 +235,13 @@ export function CrmFiche({ id }: { id: string }) {
                 )}
                 {(data.gmaps_rating !== null ||
                   data.gmaps_reviews !== null) && (
-                  <span className="inline-flex items-center gap-1.5 text-sm font-mono">
+                  <span className="inline-flex items-center gap-1.5 text-sm font-mono dark:text-cream">
                     <Star
                       className="h-4 w-4 text-snooze fill-snooze"
                       strokeWidth={1.5}
                     />
                     {data.gmaps_rating ?? "—"}
-                    <span className="text-textMuted">
+                    <span className="text-textMuted dark:text-nightMuted">
                       ({data.gmaps_reviews ?? 0})
                     </span>
                   </span>
@@ -252,7 +252,7 @@ export function CrmFiche({ id }: { id: string }) {
 
           <Card>
             <CardBody>
-              <h3 className="text-[11px] uppercase tracking-wider text-textMuted mb-3">
+              <h3 className="text-[11px] uppercase tracking-wider text-textMuted dark:text-nightMuted mb-3">
                 Avancement
               </h3>
               <PipelineSelector
@@ -260,9 +260,9 @@ export function CrmFiche({ id }: { id: string }) {
                 onChange={onPipelineChange}
               />
               {data.pipeline_status === "contacte" && (
-                <p className="mt-3 text-xs text-textMuted">
+                <p className="mt-3 text-xs text-textMuted dark:text-nightMuted">
                   Rappels automatiques actifs. {data.relance_paused ? (
-                    <span className="text-textMuted">En pause.</span>
+                    <span className="text-textMuted dark:text-nightMuted">En pause.</span>
                   ) : (
                     <>
                       {data.relance_count}/3 rappels ·{" "}
@@ -280,7 +280,7 @@ export function CrmFiche({ id }: { id: string }) {
 
           <Card>
             <CardBody>
-              <h3 className="text-[11px] uppercase tracking-wider text-textMuted mb-3">
+              <h3 className="text-[11px] uppercase tracking-wider text-textMuted dark:text-nightMuted mb-3">
                 Rappels
               </h3>
               <RemindersSection prospectId={data._id} />
@@ -289,7 +289,7 @@ export function CrmFiche({ id }: { id: string }) {
 
           <Card>
             <CardBody>
-              <h3 className="text-[11px] uppercase tracking-wider text-textMuted mb-3">
+              <h3 className="text-[11px] uppercase tracking-wider text-textMuted dark:text-nightMuted mb-3">
                 Notes
               </h3>
               <NotesPanel notes={data.notes} onAdd={onAddNote} />
@@ -301,7 +301,7 @@ export function CrmFiche({ id }: { id: string }) {
         <div className="space-y-5">
           <Card>
             <CardBody>
-              <h3 className="text-[11px] uppercase tracking-wider text-textMuted mb-3">
+              <h3 className="text-[11px] uppercase tracking-wider text-textMuted dark:text-nightMuted mb-3">
                 Historique
               </h3>
               <StatusHistory entries={data.status_history} />
@@ -310,29 +310,29 @@ export function CrmFiche({ id }: { id: string }) {
 
           <Card>
             <CardBody>
-              <h3 className="text-[11px] uppercase tracking-wider text-textMuted mb-3">
+              <h3 className="text-[11px] uppercase tracking-wider text-textMuted dark:text-nightMuted mb-3">
                 Infos
               </h3>
-              <dl className="text-xs text-textMuted space-y-1.5">
+              <dl className="text-xs text-textMuted dark:text-nightMuted space-y-1.5">
                 <div className="flex justify-between">
                   <dt>Score</dt>
-                  <dd className="font-mono text-warmDark">{data.score}</dd>
+                  <dd className="font-mono text-warmDark dark:text-cream">{data.score}</dd>
                 </div>
                 <div className="flex justify-between">
                   <dt>Statut</dt>
-                  <dd className="text-warmDark">{data.lifecycle}</dd>
+                  <dd className="text-warmDark dark:text-cream">{data.lifecycle}</dd>
                 </div>
                 {data.last_status_at && (
                   <div className="flex justify-between">
                     <dt>Dernier changement</dt>
-                    <dd className="text-warmDark">
+                    <dd className="text-warmDark dark:text-cream">
                       {new Date(data.last_status_at).toLocaleDateString("fr-FR")}
                     </dd>
                   </div>
                 )}
                 <div className="flex justify-between">
                   <dt>Vu</dt>
-                  <dd className="font-mono text-warmDark">{data.times_seen}×</dd>
+                  <dd className="font-mono text-warmDark dark:text-cream">{data.times_seen}×</dd>
                 </div>
               </dl>
             </CardBody>
@@ -340,7 +340,7 @@ export function CrmFiche({ id }: { id: string }) {
 
           <Card>
             <CardBody>
-              <h3 className="text-[11px] uppercase tracking-wider text-textMuted mb-3">
+              <h3 className="text-[11px] uppercase tracking-wider text-textMuted dark:text-nightMuted mb-3">
                 Zone de danger
               </h3>
               <button
@@ -355,7 +355,7 @@ export function CrmFiche({ id }: { id: string }) {
                 )}
                 Reset le prospect
               </button>
-              <p className="mt-2 text-[11px] text-textMuted leading-relaxed">
+              <p className="mt-2 text-[11px] text-textMuted dark:text-nightMuted leading-relaxed">
                 Retour dans la file de tri. Notes, historique, pipeline et
                 rappels supprimés.
               </p>
