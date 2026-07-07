@@ -438,21 +438,34 @@ function PostActionPanel({
 }) {
   const [note, setNote] = useState("");
   const [saving, setSaving] = useState(false);
+  const [customDate, setCustomDate] = useState("");
+  const [customTime, setCustomTime] = useState("");
 
-  const addReminderDays = async (days: number) => {
-    const due = new Date();
-    due.setDate(due.getDate() + days);
-    due.setHours(9, 0, 0, 0);
+  const postReminder = async (due: Date, label: string) => {
     await fetch("/api/reminders", {
       method: "POST",
       headers: { "content-type": "application/json" },
       body: JSON.stringify({
         prospect_id: prospectId,
         due_at: due.toISOString(),
-        label: `Rappel J+${days}`,
+        label,
         kind: "simple",
       }),
     });
+  };
+
+  const addReminderDays = async (days: number) => {
+    const due = new Date();
+    due.setDate(due.getDate() + days);
+    due.setHours(9, 0, 0, 0);
+    await postReminder(due, `Rappel J+${days}`);
+  };
+
+  const addReminderCustom = async () => {
+    const time = customTime || "09:00";
+    const due = new Date(`${customDate}T${time}:00`);
+    if (!Number.isFinite(due.getTime())) return;
+    await postReminder(due, "Rappel");
   };
 
   const handleContinue = async (reminderDays?: number) => {
@@ -468,30 +481,40 @@ function PostActionPanel({
         noteSaved = true;
       }
       if (reminderDays) await addReminderDays(reminderDays);
+      else if (customDate) await addReminderCustom();
     } finally {
       setSaving(false);
       onClose(noteSaved);
     }
   };
 
+  const tomorrow = (() => {
+    const d = new Date();
+    d.setDate(d.getDate() + 1);
+    const yyyy = d.getFullYear();
+    const mm = String(d.getMonth() + 1).padStart(2, "0");
+    const dd = String(d.getDate()).padStart(2, "0");
+    return `${yyyy}-${mm}-${dd}`;
+  })();
+
   return (
-    <div className="fixed inset-0 z-40 flex items-center justify-center bg-black/20 backdrop-blur-[2px]">
-      <div className="bg-white rounded-2xl shadow-warm border border-mid w-full max-w-md mx-4 overflow-hidden">
-        <div className="px-5 py-4 border-b border-mid flex items-center gap-2">
+    <div className="fixed inset-0 z-40 flex items-center justify-center bg-black/20 dark:bg-black/50 backdrop-blur-[2px]">
+      <div className="bg-white dark:bg-nightSurface rounded-2xl shadow-warm border border-mid dark:border-nightBorder w-full max-w-md mx-4 overflow-hidden">
+        <div className="px-5 py-4 border-b border-mid dark:border-nightBorder flex items-center gap-2">
           {action === "qualify" ? (
             <Check className="h-4 w-4 text-accent2" />
           ) : (
             <Bell className="h-4 w-4 text-snooze" />
           )}
-          <span className="font-medium text-sm">
+          <span className="font-medium text-sm dark:text-cream">
             {action === "qualify" ? "Noté comme intéressé" : "Rappel programmé"}
           </span>
-          <span className="text-xs text-textMuted ml-1">· {prospectName}</span>
+          <span className="text-xs text-textMuted dark:text-nightMuted ml-1">· {prospectName}</span>
         </div>
 
         <div className="p-5 space-y-4">
           <div>
-            <label className="text-xs text-textMuted mb-1.5 block">
+            <label className="text-xs text-textMuted dark:text-nightMuted mb-1.5 block">
               Que s&apos;est-il passé ? (optionnel)
             </label>
             <textarea
@@ -500,12 +523,12 @@ function PostActionPanel({
               onChange={(e) => setNote(e.target.value)}
               placeholder="Occupé, rappeler la semaine prochaine…"
               rows={2}
-              className="w-full rounded-xl border border-mid px-3 py-2 text-sm resize-none focus:border-accent focus:ring-2 focus:ring-accent/20 focus:outline-none"
+              className="w-full rounded-xl border border-mid dark:border-nightBorder bg-white dark:bg-nightBorder/30 dark:text-cream placeholder:text-textMuted/60 dark:placeholder:text-nightMuted/60 px-3 py-2 text-sm resize-none focus:border-accent focus:ring-2 focus:ring-accent/20 focus:outline-none"
             />
           </div>
 
           <div>
-            <p className="text-xs text-textMuted mb-2">Programmer un rappel ?</p>
+            <p className="text-xs text-textMuted dark:text-nightMuted mb-2">Programmer un rappel ?</p>
             <div className="flex gap-2 flex-wrap">
               {[
                 { days: 3, label: "+3j" },
@@ -517,22 +540,53 @@ function PostActionPanel({
                   key={days}
                   disabled={saving}
                   onClick={() => handleContinue(days)}
-                  className="rounded-full border border-mid px-3 py-1.5 text-xs hover:border-accent hover:text-accent transition"
+                  className="rounded-full border border-mid dark:border-nightBorder dark:text-cream px-3 py-1.5 text-xs hover:border-accent hover:text-accent transition"
                 >
                   {label}
                 </button>
               ))}
             </div>
+            <div className="mt-3 flex items-end gap-2">
+              <div className="flex-1">
+                <label className="text-[11px] text-textMuted dark:text-nightMuted block mb-1">
+                  Ou date précise
+                </label>
+                <input
+                  type="date"
+                  value={customDate}
+                  min={tomorrow}
+                  onChange={(e) => setCustomDate(e.target.value)}
+                  disabled={saving}
+                  className="w-full rounded-xl border border-mid dark:border-nightBorder bg-white dark:bg-nightBorder/30 dark:text-cream dark:[color-scheme:dark] px-3 py-2 text-sm focus:border-accent focus:ring-2 focus:ring-accent/20 focus:outline-none"
+                />
+              </div>
+              <div className="w-28">
+                <label className="text-[11px] text-textMuted dark:text-nightMuted block mb-1">
+                  Heure (opt.)
+                </label>
+                <input
+                  type="time"
+                  value={customTime}
+                  onChange={(e) => setCustomTime(e.target.value)}
+                  disabled={saving || !customDate}
+                  className="w-full rounded-xl border border-mid dark:border-nightBorder bg-white dark:bg-nightBorder/30 dark:text-cream dark:[color-scheme:dark] px-3 py-2 text-sm focus:border-accent focus:ring-2 focus:ring-accent/20 focus:outline-none disabled:opacity-50"
+                />
+              </div>
+            </div>
           </div>
         </div>
 
-        <div className="px-5 py-3 border-t border-mid">
+        <div className="px-5 py-3 border-t border-mid dark:border-nightBorder flex items-center justify-between gap-3">
           <button
             disabled={saving}
             onClick={() => handleContinue()}
-            className="inline-flex items-center gap-2 text-xs text-textMuted hover:text-warmDark transition"
+            className="inline-flex items-center gap-2 text-xs text-textMuted dark:text-nightMuted hover:text-warmDark dark:hover:text-cream transition"
           >
-            {note.trim() ? "Enregistrer et continuer" : "Continuer sans noter"}
+            {customDate
+              ? "Enregistrer avec la date choisie"
+              : note.trim()
+              ? "Enregistrer et continuer"
+              : "Continuer sans noter"}
             <ArrowRight className="h-3.5 w-3.5" />
           </button>
         </div>

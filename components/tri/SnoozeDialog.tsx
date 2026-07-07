@@ -82,18 +82,18 @@ export function SnoozeDialog({
             animate={{ scale: 1, y: 0 }}
             exit={{ scale: 0.96, y: 8 }}
             transition={{ duration: 0.14, ease: [0.22, 1, 0.36, 1] }}
-            className="bg-cream rounded-2xl shadow-warm-lg border border-mid w-full max-w-sm"
+            className="bg-cream dark:bg-nightSurface rounded-2xl shadow-warm-lg border border-mid dark:border-nightBorder w-full max-w-sm"
             onClick={(e) => e.stopPropagation()}
           >
-            <div className="flex items-center justify-between px-5 py-3 border-b border-mid">
+            <div className="flex items-center justify-between px-5 py-3 border-b border-mid dark:border-nightBorder">
               <div className="flex items-center gap-2">
                 <Clock className="h-4 w-4 text-snooze" strokeWidth={2} />
-                <span className="text-sm font-medium">Snoozer ce prospect</span>
+                <span className="text-sm font-medium dark:text-cream">Snoozer ce prospect</span>
               </div>
               <button
                 onClick={onClose}
                 aria-label="Fermer"
-                className="text-textMuted hover:text-warmDark transition"
+                className="text-textMuted dark:text-nightMuted hover:text-warmDark dark:hover:text-cream transition"
               >
                 <X className="h-4 w-4" />
               </button>
@@ -106,7 +106,7 @@ export function SnoozeDialog({
                     onClick={() =>
                       setDate(toLocalDateInput(addDays(new Date(), p.days)))
                     }
-                    className="px-3 py-1.5 rounded-full text-xs border border-mid hover:border-snooze hover:bg-snooze/10 transition"
+                    className="px-3 py-1.5 rounded-full text-xs border border-mid dark:border-nightBorder dark:text-cream hover:border-snooze hover:bg-snooze/10 dark:hover:border-snooze transition"
                   >
                     {p.label}
                   </button>
@@ -115,7 +115,7 @@ export function SnoozeDialog({
               <div>
                 <label
                   htmlFor="snooze-date"
-                  className="text-xs text-textMuted block mb-1"
+                  className="text-xs text-textMuted dark:text-nightMuted block mb-1"
                 >
                   Re-surfaçage le
                 </label>
@@ -126,7 +126,7 @@ export function SnoozeDialog({
                   value={date}
                   min={toLocalDateInput(addDays(new Date(), 1))}
                   onChange={(e) => setDate(e.target.value)}
-                  className="w-full rounded-xl border border-mid bg-white px-4 py-2.5 text-sm focus:border-accent focus:ring-2 focus:ring-accent/20 focus:outline-none"
+                  className="w-full rounded-xl border border-mid dark:border-nightBorder bg-white dark:bg-nightBorder/30 dark:text-cream dark:[color-scheme:dark] px-4 py-2.5 text-sm focus:border-accent focus:ring-2 focus:ring-accent/20 focus:outline-none"
                 />
               </div>
               <div className="flex justify-end gap-2 pt-2">
