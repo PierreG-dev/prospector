@@ -43,13 +43,15 @@ export function TopBar() {
 
   return (
     <header className="h-14 bg-warmDark text-cream border-b border-black/20 flex items-center justify-between px-6 shrink-0">
-      <div className="flex items-baseline gap-3">
+      <div className="flex items-center gap-3">
         <span className="font-serif italic text-2xl leading-none">
           Prospector
         </span>
-        <span className="text-[10px] tracking-[0.35em] text-mid/80">
-          GODINO
-        </span>
+        <img
+          src="/logos/logo.svg"
+          alt="Logo"
+          className="h-7 w-7"
+        />
       </div>
       <div className="flex items-center gap-4">
         <div
