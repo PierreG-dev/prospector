@@ -123,7 +123,7 @@ export function CrmList() {
               <input
                 value={q}
                 onChange={(e) => setQ(e.target.value)}
-                placeholder="Rechercher par nom…"
+                placeholder="Rechercher par nom ou téléphone…"
                 className="w-full rounded-full border border-mid dark:border-nightBorder bg-white dark:bg-nightBorder/30 dark:text-cream placeholder:text-textMuted/60 dark:placeholder:text-nightMuted/60 pl-9 pr-4 py-2 text-sm focus:border-accent focus:ring-2 focus:ring-accent/20 focus:outline-none"
               />
             </div>

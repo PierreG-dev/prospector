@@ -14,6 +14,9 @@ import {
   RotateCcw,
   Star,
   Loader2,
+  Check,
+  Clock,
+  X,
 } from "lucide-react";
 import { Card, CardBody } from "@/components/ui/Card";
 import { Pill } from "@/components/ui/Pill";
@@ -57,6 +60,9 @@ export function CrmFiche({ id }: { id: string }) {
   const [loading, setLoading] = useState(true);
   const [resetting, setResetting] = useState(false);
   const [archiving, setArchiving] = useState(false);
+  const [decidePending, setDecidePending] = useState<
+    "qualify" | "snooze" | "reject" | null
+  >(null);
   const [toast, setToast] = useState<{
     open: boolean;
     text: string;
@@ -132,6 +138,60 @@ export function CrmFiche({ id }: { id: string }) {
     }
     showToast("Prospect archivé", "success");
     router.push("/crm");
+  };
+
+  const onQualify = async () => {
+    setDecidePending("qualify");
+    const r = await fetch(`/api/prospects/${id}/decide`, {
+      method: "POST",
+      headers: { "content-type": "application/json" },
+      body: JSON.stringify({ action: "qualify", note: "Qualifié depuis la fiche" }),
+    });
+    setDecidePending(null);
+    if (!r.ok) {
+      showToast("Erreur", "danger");
+      return;
+    }
+    showToast("Prospect qualifié", "success");
+    await load();
+  };
+
+  const onSnooze = async (days: number) => {
+    setDecidePending("snooze");
+    const dt = new Date();
+    dt.setDate(dt.getDate() + days);
+    const r = await fetch(`/api/prospects/${id}/decide`, {
+      method: "POST",
+      headers: { "content-type": "application/json" },
+      body: JSON.stringify({
+        action: "snooze",
+        snooze_until: dt.toISOString(),
+        note: `Snoozé depuis la fiche (+${days}j)`,
+      }),
+    });
+    setDecidePending(null);
+    if (!r.ok) {
+      showToast("Erreur", "danger");
+      return;
+    }
+    showToast(`Snoozé pour ${days} jour${days > 1 ? "s" : ""}`, "success");
+    await load();
+  };
+
+  const onReject = async () => {
+    setDecidePending("reject");
+    const r = await fetch(`/api/prospects/${id}/decide`, {
+      method: "POST",
+      headers: { "content-type": "application/json" },
+      body: JSON.stringify({ action: "reject", note: "Rejeté depuis la fiche" }),
+    });
+    setDecidePending(null);
+    if (!r.ok) {
+      showToast("Erreur", "danger");
+      return;
+    }
+    showToast("Prospect rejeté", "success");
+    await load();
   };
 
   const onReset = async () => {
@@ -271,6 +331,61 @@ export function CrmFiche({ id }: { id: string }) {
               </div>
             </CardBody>
           </Card>
+
+          {(data.lifecycle === "inbox" || data.lifecycle === "snoozed") && (
+            <Card>
+              <CardBody>
+                <div className="flex items-start justify-between gap-3 flex-wrap">
+                  <div>
+                    <h3 className="text-[11px] uppercase tracking-wider text-textMuted dark:text-nightMuted">
+                      Trier
+                    </h3>
+                    <p className="mt-1 text-xs text-textMuted dark:text-nightMuted">
+                      Prospect {data.lifecycle === "snoozed" ? "snoozé" : "non trié"} — décide directement ici.
+                    </p>
+                  </div>
+                  <div className="flex flex-wrap items-center gap-2">
+                    <button
+                      onClick={onQualify}
+                      disabled={decidePending !== null}
+                      className="inline-flex items-center gap-1.5 rounded-md bg-accent2 text-white px-3 py-1.5 text-xs font-medium hover:opacity-90 transition disabled:opacity-50 disabled:cursor-not-allowed"
+                    >
+                      {decidePending === "qualify" ? (
+                        <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                      ) : (
+                        <Check className="h-3.5 w-3.5" />
+                      )}
+                      Intéressé
+                    </button>
+                    <button
+                      onClick={() => onSnooze(7)}
+                      disabled={decidePending !== null}
+                      className="inline-flex items-center gap-1.5 rounded-md border border-snooze/40 text-snooze px-3 py-1.5 text-xs hover:bg-snooze/10 transition disabled:opacity-50 disabled:cursor-not-allowed"
+                    >
+                      {decidePending === "snooze" ? (
+                        <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                      ) : (
+                        <Clock className="h-3.5 w-3.5" />
+                      )}
+                      Snooze +7j
+                    </button>
+                    <button
+                      onClick={onReject}
+                      disabled={decidePending !== null}
+                      className="inline-flex items-center gap-1.5 rounded-md border border-reject/40 text-reject px-3 py-1.5 text-xs hover:bg-reject/10 transition disabled:opacity-50 disabled:cursor-not-allowed"
+                    >
+                      {decidePending === "reject" ? (
+                        <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                      ) : (
+                        <X className="h-3.5 w-3.5" />
+                      )}
+                      Rejeter
+                    </button>
+                  </div>
+                </div>
+              </CardBody>
+            </Card>
+          )}
 
           <Card>
             <CardBody>

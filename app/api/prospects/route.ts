@@ -5,7 +5,7 @@ import { Prospect } from "@/models/Prospect";
 export const dynamic = "force-dynamic";
 export const runtime = "nodejs";
 
-const LIMIT_MAX = 200;
+const LIMIT_MAX = 1000;
 
 export async function GET(req: Request) {
   await dbConnect();
@@ -18,7 +18,7 @@ export async function GET(req: Request) {
   const pipeline = url.searchParams.get("pipeline");
   const q = (url.searchParams.get("q") ?? "").trim();
   const limit = Math.min(
-    Number(url.searchParams.get("limit") ?? 50) || 50,
+    Number(url.searchParams.get("limit") ?? 500) || 500,
     LIMIT_MAX
   );
   const offset = Math.max(Number(url.searchParams.get("offset") ?? 0) || 0, 0);
@@ -31,9 +31,20 @@ export async function GET(req: Request) {
   if (city) filter.city = city;
   if (pipeline) filter.pipeline_status = pipeline;
   if (q) {
-    // recherche simple insensible casse sur name (escape regex meta)
+    // recherche par nom OU téléphone. Si la requête contient au moins 3 chiffres,
+    // on cherche aussi sur phone / keys.phone_e164 en comparant les chiffres uniquement.
     const safe = q.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
-    filter.name = { $regex: safe, $options: "i" };
+    const digits = q.replace(/\D/g, "");
+    const or: Record<string, unknown>[] = [
+      { name: { $regex: safe, $options: "i" } },
+    ];
+    if (digits.length >= 3) {
+      // téléphones stockés bruts (peuvent contenir espaces/points/+) → on matche les chiffres.
+      const digitPattern = digits.split("").join("\\D*");
+      or.push({ phone: { $regex: digitPattern } });
+      or.push({ "keys.phone_e164": { $regex: digits } });
+    }
+    filter.$or = or;
   }
 
   const [items, total, facetTrades, facetCities] = await Promise.all([
