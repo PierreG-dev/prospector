@@ -8,6 +8,7 @@ import {
   Layers,
   Users,
   Settings,
+  Package,
   type LucideIcon,
 } from "lucide-react";
 import { cn } from "@/lib/cn";
@@ -17,6 +18,7 @@ type NavItem = { href: string; label: string; icon: LucideIcon };
 const items: NavItem[] = [
   { href: "/dashboard", label: "Aujourd'hui", icon: LayoutDashboard },
   { href: "/import", label: "Import", icon: Upload },
+  { href: "/campaigns", label: "Campagnes", icon: Package },
   { href: "/tri", label: "File d'appels", icon: Layers },
   { href: "/crm", label: "Contacts", icon: Users },
   { href: "/settings", label: "Réglages", icon: Settings },

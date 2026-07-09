@@ -16,6 +16,7 @@ const ImportRunSchema = new Schema(
     dup_count: { type: Number, default: 0 },
     filtered_count: { type: Number, default: 0 },
     source_file: { type: String, default: null },
+    paused: { type: Boolean, default: false, index: true },
   },
   { timestamps: true, collection: "import_runs" }
 );

@@ -1,8 +1,28 @@
 import { dbConnect } from "@/lib/db";
 import { Prospect } from "@/models/Prospect";
+import { ImportRun } from "@/models/ImportRun";
 import { weightAt } from "@/lib/trade/calltime";
 import type { TradeBucket } from "@/lib/trade/detect";
 import { scoreV2 } from "@/lib/scoring/score";
+
+/**
+ * Un prospect est masqué de la file de tri si TOUS ses runs sont issus de
+ * campagnes suspendues. Un prospect sans runs (edge case) reste visible.
+ */
+async function pausedRunIds(): Promise<unknown[]> {
+  const rows = await ImportRun.find({ paused: true }).select({ _id: 1 }).lean();
+  return rows.map((r) => r._id);
+}
+
+function excludePausedClause(pausedIds: unknown[]): Record<string, unknown> | null {
+  if (pausedIds.length === 0) return null;
+  return {
+    $or: [
+      { runs: { $size: 0 } },
+      { runs: { $elemMatch: { run_id: { $nin: pausedIds } } } },
+    ],
+  };
+}
 
 /**
  * Forme allégée retournée au client — pas de raw, pas d'historique.
@@ -127,6 +147,8 @@ export async function pickNext(
 ): Promise<TriCandidate | null> {
   await dbConnect();
 
+  const pausedIds = await pausedRunIds();
+  const pausedClause = excludePausedClause(pausedIds);
   const query: Record<string, unknown> = {
     $or: [
       { lifecycle: "inbox" },
@@ -135,6 +157,9 @@ export async function pickNext(
   };
   if (excludeIds.length > 0) {
     query._id = { $nin: excludeIds };
+  }
+  if (pausedClause) {
+    query.$and = [pausedClause];
   }
 
   // Charge toute la file éligible (champs légers, pas d'historique).
@@ -277,12 +302,18 @@ function toCandidate(p: Record<string, unknown>, now: Date): TriCandidate {
  */
 export async function countQueue(now: Date = new Date()): Promise<number> {
   await dbConnect();
-  return Prospect.countDocuments({
+  const pausedIds = await pausedRunIds();
+  const pausedClause = excludePausedClause(pausedIds);
+  const query: Record<string, unknown> = {
     $or: [
       { lifecycle: "inbox" },
       { lifecycle: "snoozed", snooze_until: { $lte: now } },
     ],
-  });
+  };
+  if (pausedClause) {
+    query.$and = [pausedClause];
+  }
+  return Prospect.countDocuments(query);
 }
 
 /** Retourne l'index du poids maximal. En cas d'égalité, prend le premier. */
