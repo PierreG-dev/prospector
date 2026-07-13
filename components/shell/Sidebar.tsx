@@ -9,6 +9,7 @@ import {
   Users,
   Settings,
   Package,
+  BarChart3,
   type LucideIcon,
 } from "lucide-react";
 import { cn } from "@/lib/cn";
@@ -21,6 +22,7 @@ const items: NavItem[] = [
   { href: "/campaigns", label: "Campagnes", icon: Package },
   { href: "/tri", label: "File d'appels", icon: Layers },
   { href: "/crm", label: "Contacts", icon: Users },
+  { href: "/stats", label: "Stats", icon: BarChart3 },
   { href: "/settings", label: "Réglages", icon: Settings },
 ];
 
