@@ -109,6 +109,13 @@ export function mobilePhoneBoost(phoneE164: string | null): number {
 }
 
 /**
+ * Concentration de la roulette : les poids sont élevés à cette puissance avant
+ * tirage. Neutralise le biais volumétrique (masse cumulée des faibles poids qui
+ * noyait le top en tirage linéaire). k=1 → roulette pure, k→∞ → argmax.
+ */
+const ROULETTE_EXPONENT = 3;
+
+/**
  * Combine score (P de conversion 0-100), fenêtre d'appel optimale et
  * les boosts "lead bouillant" → poids final.
  *
@@ -191,9 +198,12 @@ export async function pickNext(
   if (weights.every((w) => w <= 0)) {
     weights = scores;
   }
-  // Roulette pondérée : les poids restent identiques (logique de points inchangée),
-  // seule la sélection devient aléatoire pour éviter les paquets par ville/métier.
-  const idx = rouletteIndex(weights);
+  // Roulette pondérée avec concentration (w**ROULETTE_EXPONENT) : la logique de
+  // points reste identique, mais l'exposant contrecarre le biais volumétrique de
+  // la queue de distribution (beaucoup de prospects à petit poids qui, cumulés,
+  // écrasaient le top en tirage linéaire).
+  const sharpened = weights.map((w) => (w > 0 ? Math.pow(w, ROULETTE_EXPONENT) : 0));
+  const idx = rouletteIndex(sharpened);
   const pick = candidates[idx]!;
 
   return toCandidate(pick, now);
