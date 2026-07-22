@@ -109,13 +109,6 @@ export function mobilePhoneBoost(phoneE164: string | null): number {
 }
 
 /**
- * Concentration de la roulette : les poids sont élevés à cette puissance avant
- * tirage. Neutralise le biais volumétrique (masse cumulée des faibles poids qui
- * noyait le top en tirage linéaire). k=1 → roulette pure, k→∞ → argmax.
- */
-const ROULETTE_EXPONENT = 3;
-
-/**
  * Combine score (P de conversion 0-100), fenêtre d'appel optimale et
  * les boosts "lead bouillant" → poids final.
  *
@@ -198,12 +191,8 @@ export async function pickNext(
   if (weights.every((w) => w <= 0)) {
     weights = scores;
   }
-  // Roulette pondérée avec concentration (w**ROULETTE_EXPONENT) : la logique de
-  // points reste identique, mais l'exposant contrecarre le biais volumétrique de
-  // la queue de distribution (beaucoup de prospects à petit poids qui, cumulés,
-  // écrasaient le top en tirage linéaire).
-  const sharpened = weights.map((w) => (w > 0 ? Math.pow(w, ROULETTE_EXPONENT) : 0));
-  const idx = rouletteIndex(sharpened);
+  // Sélection déterministe : le poids le plus élevé gagne toujours.
+  const idx = argmax(weights);
   const pick = candidates[idx]!;
 
   return toCandidate(pick, now);
@@ -334,30 +323,6 @@ export async function countQueue(now: Date = new Date()): Promise<number> {
     query.$and = [pausedClause];
   }
   return Prospect.countDocuments(query);
-}
-
-/**
- * Roulette pondérée : tire un index avec probabilité proportionnelle au poids.
- * `rand` injectable pour tests déterministes (par défaut Math.random).
- * - Poids négatifs traités comme 0.
- * - Si la somme est nulle (tous à 0), tirage uniforme.
- */
-export function rouletteIndex(
-  weights: number[],
-  rand: () => number = Math.random
-): number {
-  if (weights.length === 0) return 0;
-  let total = 0;
-  for (const w of weights) if (w > 0) total += w;
-  if (total <= 0) return Math.floor(rand() * weights.length);
-  const r = rand() * total;
-  let acc = 0;
-  for (let i = 0; i < weights.length; i++) {
-    const w = weights[i]! > 0 ? weights[i]! : 0;
-    acc += w;
-    if (r < acc) return i;
-  }
-  return weights.length - 1;
 }
 
 /** Retourne l'index du poids maximal. En cas d'égalité, prend le premier. */

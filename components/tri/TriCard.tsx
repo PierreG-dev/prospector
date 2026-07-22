@@ -18,6 +18,7 @@ import {
   ArrowLeft,
   ArrowUp,
   Sparkles,
+  IdCard,
 } from "lucide-react";
 import { OgPreview } from "./OgPreview";
 import { Pill } from "@/components/ui/Pill";
@@ -220,6 +221,12 @@ export function TriCard({
                 kbd="M"
               />
             )}
+            <ExternalLink
+              href={`/crm/${candidate.id}`}
+              icon={<IdCard className="h-3.5 w-3.5" />}
+              label="Fiche"
+              kbd="F"
+            />
             <button
               onClick={onOpenPrep}
               className="inline-flex items-center gap-2 rounded-full border border-mid px-3 py-1.5 text-xs hover:border-accent hover:text-accent transition"

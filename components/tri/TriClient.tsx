@@ -271,6 +271,14 @@ export function TriClient() {
     },
     [enable, current]
   );
+  useHotkeys(
+    "f",
+    () => {
+      if (!enable || !current) return;
+      window.open(`/crm/${current.id}`, "_blank", "noopener,noreferrer");
+    },
+    [enable, current]
+  );
 
   // --- Render ---
   if (loading) {
