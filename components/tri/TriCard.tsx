@@ -176,6 +176,11 @@ export function TriCard({
             {candidate.times_seen > 1 && (
               <Pill tone="neutral">vu {candidate.times_seen}×</Pill>
             )}
+            {candidate.snooze_count > 0 && (
+              <Pill tone="snooze" icon={<Clock className="h-3.5 w-3.5" />}>
+                Snoozé {candidate.snooze_count}×
+              </Pill>
+            )}
             {candidate.gmaps_rank != null && (
               <span>
                 Google{" "}

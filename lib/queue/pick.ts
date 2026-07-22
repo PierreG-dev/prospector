@@ -49,6 +49,7 @@ export type TriCandidate = {
   latest_review_days: number | null;
   profile_gaps: number;
   is_mobile_phone: boolean;
+  snooze_count: number;
 };
 
 /** Signaux extraits d'un doc Mongoose lean pour peser un candidat. */
@@ -168,7 +169,7 @@ export async function pickNext(
       name: 1, category: 1, city: 1, address: 1, phone: 1,
       website_url: 1, gmaps_url: 1, gmaps_rating: 1, gmaps_reviews: 1,
       has_website: 1, keys: 1, trade: 1, times_seen: 1, og: 1,
-      lifecycle: 1, snooze_until: 1,
+      lifecycle: 1, snooze_until: 1, status_history: 1,
       "raw.rank": 1, "raw.reviews": 1, "raw.updatedAt": 1,
       "raw.imagesCount": 1, "raw.openingHours": 1,
     })
@@ -190,8 +191,9 @@ export async function pickNext(
   if (weights.every((w) => w <= 0)) {
     weights = scores;
   }
-  // Sélection déterministe : le poids le plus élevé gagne toujours.
-  const idx = argmax(weights);
+  // Roulette pondérée : les poids restent identiques (logique de points inchangée),
+  // seule la sélection devient aléatoire pour éviter les paquets par ville/métier.
+  const idx = rouletteIndex(weights);
   const pick = candidates[idx]!;
 
   return toCandidate(pick, now);
@@ -269,6 +271,13 @@ function toCandidate(p: Record<string, unknown>, now: Date): TriCandidate {
   const latestReviewDays = signals.latestReviewAt
     ? Math.floor((now.getTime() - signals.latestReviewAt.getTime()) / 86_400_000)
     : null;
+  const history = Array.isArray(p.status_history)
+    ? (p.status_history as Array<{ to?: unknown }>)
+    : [];
+  const snoozeCount = history.reduce(
+    (n, h) => (h?.to === "snooze" ? n + 1 : n),
+    0
+  );
   return {
     id: String(p._id),
     name: String(p.name ?? ""),
@@ -293,6 +302,7 @@ function toCandidate(p: Record<string, unknown>, now: Date): TriCandidate {
     latest_review_days: latestReviewDays,
     profile_gaps: signals.gaps,
     is_mobile_phone: mobilePhoneBoost(signals.phoneE164) > 1,
+    snooze_count: snoozeCount,
   };
 }
 
@@ -314,6 +324,30 @@ export async function countQueue(now: Date = new Date()): Promise<number> {
     query.$and = [pausedClause];
   }
   return Prospect.countDocuments(query);
+}
+
+/**
+ * Roulette pondérée : tire un index avec probabilité proportionnelle au poids.
+ * `rand` injectable pour tests déterministes (par défaut Math.random).
+ * - Poids négatifs traités comme 0.
+ * - Si la somme est nulle (tous à 0), tirage uniforme.
+ */
+export function rouletteIndex(
+  weights: number[],
+  rand: () => number = Math.random
+): number {
+  if (weights.length === 0) return 0;
+  let total = 0;
+  for (const w of weights) if (w > 0) total += w;
+  if (total <= 0) return Math.floor(rand() * weights.length);
+  const r = rand() * total;
+  let acc = 0;
+  for (let i = 0; i < weights.length; i++) {
+    const w = weights[i]! > 0 ? weights[i]! : 0;
+    acc += w;
+    if (r < acc) return i;
+  }
+  return weights.length - 1;
 }
 
 /** Retourne l'index du poids maximal. En cas d'égalité, prend le premier. */
